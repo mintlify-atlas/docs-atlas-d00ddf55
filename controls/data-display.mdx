@@ -1,0 +1,335 @@
+---
+title: "Data Display Controls in WinUI: Collections and Visuals"
+description: "Render trees, grids, avatars, and badges in WinUI with TreeView, ItemsView, ItemsRepeater, AnnotatedScrollBar, PersonPicture, and InfoBadge controls."
+---
+
+WinUI data display controls handle everything from complex hierarchical trees to small notification overlays. Most of the collection controls support virtualization so large data sets render efficiently without manual management.
+
+## TreeView
+
+`TreeView` renders a hierarchical list where nodes can be expanded and collapsed. It supports single and multiple selection, keyboard navigation, and drag-and-drop reordering. You can populate it with `TreeViewNode` objects or bind directly to a flat or nested data source via `ItemsSource`.
+
+<Tabs>
+  <Tab title="Node-based">
+```xml
+<muxc:TreeView
+    x:Name="FolderTree"
+    SelectionMode="Single"
+    ItemInvoked="FolderTree_ItemInvoked">
+    <muxc:TreeView.RootNodes>
+        <muxc:TreeViewNode Content="Documents" IsExpanded="True">
+            <muxc:TreeViewNode.Children>
+                <muxc:TreeViewNode Content="Reports" />
+                <muxc:TreeViewNode Content="Templates" />
+            </muxc:TreeViewNode.Children>
+        </muxc:TreeViewNode>
+        <muxc:TreeViewNode Content="Downloads" />
+    </muxc:TreeView.RootNodes>
+</muxc:TreeView>
+```
+  </Tab>
+  <Tab title="Data-bound">
+```xml
+<muxc:TreeView
+    ItemsSource="{x:Bind FileSystemTree}"
+    SelectionMode="Multiple"
+    SelectionChanged="Tree_SelectionChanged">
+    <muxc:TreeView.ItemTemplate>
+        <DataTemplate x:DataType="local:FileNode">
+            <muxc:TreeViewItem
+                Content="{x:Bind Name}"
+                ItemsSource="{x:Bind Children}" />
+        </DataTemplate>
+    </muxc:TreeView.ItemTemplate>
+</muxc:TreeView>
+```
+  </Tab>
+</Tabs>
+
+### Key properties (`TreeView`)
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `RootNodes` | `IVector<TreeViewNode>` | — | Top-level nodes when using the node-based API. |
+| `ItemsSource` | `Object` | — | Data source for the data-bound API. |
+| `SelectionMode` | `TreeViewSelectionMode` | `Single` | `None`, `Single`, or `Multiple`. |
+| `SelectedItem` | `Object` | — | The single selected item (single-select mode). |
+| `SelectedItems` | `IVector<Object>` | — | All selected items (multiple-select mode). |
+| `SelectedNode` | `TreeViewNode` | — | The selected node (node-based, single-select). |
+| `CanDragItems` | `Boolean` | `true` | Allow drag-and-drop of nodes. |
+| `CanReorderItems` | `Boolean` | `true` | Allow reordering by drag. |
+
+### Key properties (`TreeViewNode`)
+
+| Property | Type | Description |
+|---|---|---|
+| `Content` | `Object` | Data displayed for this node. |
+| `Children` | `IVector<TreeViewNode>` | Child nodes of this node. |
+| `IsExpanded` | `Boolean` | Whether this node's children are visible. |
+| `HasUnrealizedChildren` | `Boolean` | Signal to lazy-load children on first expand. |
+
+### Events
+
+| Event | Description |
+|---|---|
+| `ItemInvoked` | Fires when a node is tapped. |
+| `Expanding` | Fires when a node is about to expand. |
+| `Collapsed` | Fires when a node collapses. |
+| `SelectionChanged` | Fires with `AddedItems` and `RemovedItems` when selection changes. |
+
+---
+
+## ItemsView
+
+`ItemsView` is a virtualized collection control that separates the item container from the scrolling infrastructure. It pairs with any `Layout` subclass (`StackLayout`, `UniformGridLayout`, `LinedFlowLayout`) and exposes rich selection APIs.
+
+<Tabs>
+  <Tab title="Grid layout">
+```xml
+<muxc:ItemsView
+    ItemsSource="{x:Bind Photos}"
+    SelectionMode="Multiple"
+    IsItemInvokedEnabled="True"
+    ItemInvoked="ItemsView_ItemInvoked">
+    <muxc:ItemsView.Layout>
+        <muxc:UniformGridLayout MinItemWidth="160" MinItemHeight="160" />
+    </muxc:ItemsView.Layout>
+    <muxc:ItemsView.ItemTemplate>
+        <DataTemplate x:DataType="local:Photo">
+            <muxc:ItemContainer>
+                <Image Source="{x:Bind Thumbnail}" Stretch="UniformToFill" />
+            </muxc:ItemContainer>
+        </DataTemplate>
+    </muxc:ItemsView.ItemTemplate>
+</muxc:ItemsView>
+```
+  </Tab>
+  <Tab title="Stack layout">
+```xml
+<muxc:ItemsView
+    ItemsSource="{x:Bind Messages}"
+    SelectionMode="Single">
+    <muxc:ItemsView.Layout>
+        <muxc:StackLayout Orientation="Vertical" Spacing="4" />
+    </muxc:ItemsView.Layout>
+    <muxc:ItemsView.ItemTemplate>
+        <DataTemplate x:DataType="local:Message">
+            <muxc:ItemContainer>
+                <TextBlock Text="{x:Bind Body}" TextWrapping="Wrap" />
+            </muxc:ItemContainer>
+        </DataTemplate>
+    </muxc:ItemsView.ItemTemplate>
+</muxc:ItemsView>
+```
+  </Tab>
+</Tabs>
+
+### Key properties
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `ItemsSource` | `Object` | — | The data collection to display. |
+| `ItemTemplate` | `IElementFactory` | — | Template for rendering each item. |
+| `Layout` | `Layout` | — | The `Layout` used to position items. |
+| `SelectionMode` | `ItemsViewSelectionMode` | `Single` | `None`, `Single`, `Multiple`, or `Extended`. |
+| `IsItemInvokedEnabled` | `Boolean` | `false` | Enable `ItemInvoked` event for tap/click. |
+| `SelectedItem` | `Object` | — | The single selected item. |
+| `SelectedItems` | `IVectorView<Object>` | — | All selected items. |
+| `CurrentItemIndex` | `Int32` | `-1` | Index of the focused (current) item. |
+
+### Methods
+
+| Method | Description |
+|---|---|
+| `Select(index)` | Programmatically select an item by index. |
+| `Deselect(index)` | Deselect an item by index. |
+| `SelectAll()` / `DeselectAll()` | Select or clear all items. |
+| `InvertSelection()` | Toggle the selection state of all items. |
+| `StartBringItemIntoView(index, options)` | Scroll an item into the viewport. |
+
+### Events
+
+| Event | Description |
+|---|---|
+| `ItemInvoked` | Fires when the user invokes an item (when `IsItemInvokedEnabled` is `true`). |
+| `SelectionChanged` | Fires when the selection changes. |
+
+---
+
+## ItemsRepeater
+
+`ItemsRepeater` virtualizes a data-bound list without providing its own scrolling or selection. Wrap it in a `ScrollView` or `ScrollViewer` and provide a `Layout` to control arrangement. It fires `ElementPrepared`, `ElementClearing`, and `ElementIndexChanged` for fine-grained lifecycle control.
+
+```xml
+<ScrollView>
+    <muxc:ItemsRepeater ItemsSource="{x:Bind Items}">
+        <muxc:ItemsRepeater.Layout>
+            <muxc:StackLayout Spacing="4" />
+        </muxc:ItemsRepeater.Layout>
+        <muxc:ItemsRepeater.ItemTemplate>
+            <DataTemplate x:DataType="local:Item">
+                <Grid Padding="12" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                    <TextBlock Text="{x:Bind Title}" />
+                </Grid>
+            </DataTemplate>
+        </muxc:ItemsRepeater.ItemTemplate>
+    </muxc:ItemsRepeater>
+</ScrollView>
+```
+
+### Key properties
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `ItemsSource` | `Object` | — | The data collection. |
+| `ItemTemplate` | `Object` | — | Template or element factory for each item. |
+| `Layout` | `Layout` | — | Arranges realized elements. |
+| `HorizontalCacheLength` | `Double` | `2.0` | Viewport-length units to realize off-screen in the horizontal direction. |
+| `VerticalCacheLength` | `Double` | `2.0` | Viewport-length units to realize off-screen in the vertical direction. |
+
+### Events
+
+| Event | Description |
+|---|---|
+| `ElementPrepared` | Fires when an element is created or recycled for a data item. |
+| `ElementClearing` | Fires before an element is recycled. |
+| `ElementIndexChanged` | Fires when the index of a realized element changes (e.g., after an insert). |
+
+---
+
+## AnnotatedScrollBar
+
+`AnnotatedScrollBar` extends a standard scrollbar with a set of labels anchored at specific scroll offsets. Hovering over the bar shows a detail flyout at the pointer position. It implements `IScrollController` and pairs directly with `ItemsView` or `ScrollView`.
+
+```xml
+<Grid>
+    <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="Auto" />
+    </Grid.ColumnDefinitions>
+
+    <muxc:ItemsView
+        x:Name="ContactsView"
+        ItemsSource="{x:Bind Contacts}"
+        VerticalScrollController="{x:Bind ScrollBar.ScrollController}" />
+
+    <muxc:AnnotatedScrollBar
+        x:Name="ScrollBar"
+        Grid.Column="1"
+        Labels="{x:Bind AlphabetLabels}"
+        Scrolling="ScrollBar_Scrolling" />
+</Grid>
+```
+
+### Key properties
+
+| Property | Type | Description |
+|---|---|---|
+| `Labels` | `IVector<AnnotatedScrollBarLabel>` | Collection of labels, each with `Content` and a `ScrollOffset`. |
+| `LabelTemplate` | `IElementFactory` | Template for the persistent labels along the track. |
+| `DetailLabelTemplate` | `IElementFactory` | Template for the flyout label shown on pointer-over. |
+| `SmallChange` | `Double` | Scroll amount per increment/decrement button click. |
+| `ScrollController` | `IScrollController` | The controller to connect to `ItemsView.VerticalScrollController`. |
+
+### Events
+
+| Event | Description |
+|---|---|
+| `Scrolling` | Fires when the user interacts with the scrollbar. `Cancel` can suppress the scroll. |
+| `DetailLabelRequested` | Fires to populate the hover flyout with custom content for a given scroll offset. |
+
+---
+
+## PersonPicture
+
+`PersonPicture` renders a circular avatar for a user or contact. It shows a profile image when available, falls back to initials derived from the `DisplayName` or a bound `Contact`, and can overlay a badge number, glyph, or small image.
+
+<Tabs>
+  <Tab title="With profile image">
+```xml
+<muxc:PersonPicture
+    DisplayName="Megan Bowen"
+    ProfilePicture="ms-appx:///Assets/avatar.png" />
+```
+  </Tab>
+  <Tab title="From Contact">
+```xml
+<muxc:PersonPicture
+    Contact="{x:Bind SelectedContact}" />
+```
+  </Tab>
+  <Tab title="With badge">
+```xml
+<muxc:PersonPicture
+    DisplayName="Alex Wilber"
+    BadgeNumber="5" />
+```
+  </Tab>
+  <Tab title="Group">
+```xml
+<muxc:PersonPicture
+    IsGroup="True"
+    DisplayName="Engineering Team" />
+```
+  </Tab>
+</Tabs>
+
+### Key properties
+
+| Property | Type | Description |
+|---|---|---|
+| `DisplayName` | `String` | Full name used to generate initials. |
+| `Initials` | `String` | Override the auto-generated initials. |
+| `ProfilePicture` | `ImageSource` | Photo to display inside the circle. |
+| `Contact` | `Windows.ApplicationModel.Contacts.Contact` | Bind a platform `Contact` object; name and photo are pulled automatically. |
+| `IsGroup` | `Boolean` | Show a generic group icon instead of initials. |
+| `BadgeNumber` | `Int32` | Numeric badge overlaid on the avatar. |
+| `BadgeGlyph` | `String` | Segoe MDL2 glyph character for the badge. |
+| `BadgeImageSource` | `ImageSource` | Image for a custom badge. |
+| `BadgeText` | `String` | Accessible text for the badge. |
+| `PreferSmallImage` | `Boolean` | Use a lower-resolution image for small display sizes. |
+
+---
+
+## InfoBadge
+
+`InfoBadge` is a small, self-sizing badge used to draw attention to another control. It can display a numeric count or a status icon. Attach it to a `NavigationViewItem`, a toolbar button, or any container using the attached property pattern.
+
+<Tabs>
+  <Tab title="Numeric">
+```xml
+<muxc:InfoBadge Value="12" />
+```
+  </Tab>
+  <Tab title="Icon badge">
+```xml
+<muxc:InfoBadge>
+    <muxc:InfoBadge.IconSource>
+        <muxc:SymbolIconSource Symbol="Important" />
+    </muxc:InfoBadge.IconSource>
+</muxc:InfoBadge>
+```
+  </Tab>
+  <Tab title="Dot badge">
+```xml
+<!-- Value=-1 and no icon shows a small dot -->
+<muxc:InfoBadge />
+```
+  </Tab>
+  <Tab title="On NavigationViewItem">
+```xml
+<muxc:NavigationViewItem Content="Inbox" Icon="Mail">
+    <muxc:NavigationViewItem.InfoBadge>
+        <muxc:InfoBadge Value="4" />
+    </muxc:NavigationViewItem.InfoBadge>
+</muxc:NavigationViewItem>
+```
+  </Tab>
+</Tabs>
+
+### Key properties
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `Value` | `Int32` | `-1` | Numeric count to display. `-1` shows a dot when no icon is set. |
+| `IconSource` | `IconSource` | — | Icon to display inside the badge instead of a number. |

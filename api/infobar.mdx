@@ -1,0 +1,187 @@
+---
+title: "InfoBar control API reference — WinUI"
+description: "API reference for WinUI InfoBar. Display persistent in-app notification banners with Informational, Success, Warning, and Error severity levels."
+---
+
+`InfoBar` is a WinUI control that displays a persistent, non-modal notification banner inline with page content. Use it to communicate ongoing conditions that require the user's attention — such as an active network error, a background operation in progress, or a successful save — without interrupting their workflow with a dialog. The bar remains visible until the user dismisses it or your code sets `IsOpen` to `false`.
+
+## Key features
+
+- Four severity levels with distinct icons and colors: `Informational`, `Success`, `Warning`, `Error`
+- `Title` and `Message` text properties for the primary notification content
+- Optional `ActionButton` for a call-to-action (accepts any `ButtonBase` subclass)
+- Closable by default, with a built-in close button; disable with `IsClosable = false`
+- `Closing` event with a `Cancel` property to prevent accidental dismissal
+- Custom `IconSource` and `Content` area for advanced layouts
+- `Closed` event reports whether the user or code closed the bar (`InfoBarCloseReason`)
+
+## Basic usage
+
+```xml
+<muxc:InfoBar x:Name="UpdateInfoBar"
+              Title="Update available"
+              Message="A new version of this app is ready to install."
+              Severity="Informational"
+              IsOpen="True" />
+```
+
+### All severity levels
+
+```xml
+<!-- Informational (default) -->
+<muxc:InfoBar Title="Did you know?"
+              Message="You can pin pages for quick access."
+              Severity="Informational"
+              IsOpen="True" />
+
+<!-- Success -->
+<muxc:InfoBar Title="File saved"
+              Message="Your changes have been saved to OneDrive."
+              Severity="Success"
+              IsOpen="True" />
+
+<!-- Warning -->
+<muxc:InfoBar Title="Storage nearly full"
+              Message="You have less than 500 MB of free space remaining."
+              Severity="Warning"
+              IsOpen="True" />
+
+<!-- Error -->
+<muxc:InfoBar Title="Unable to connect"
+              Message="Check your network connection and try again."
+              Severity="Error"
+              IsOpen="True" />
+```
+
+## Properties
+
+<ParamField path="IsOpen" type="bool" default="false">
+  Shows (`true`) or hides (`false`) the `InfoBar`. Bind this to a view-model property to control visibility from code. Changing this value triggers the `Closing` and `Closed` events when transitioning from `true` to `false`.
+</ParamField>
+
+<ParamField path="Severity" type="InfoBarSeverity" default="Informational">
+  Controls the icon and accent color of the bar. Values: `Informational` (blue), `Success` (green), `Warning` (yellow), `Error` (red).
+</ParamField>
+
+<ParamField path="Title" type="string">
+  Bold heading text displayed at the top of the bar. Use a short, clear statement of the condition.
+</ParamField>
+
+<ParamField path="Message" type="string">
+  Body text that provides additional detail about the notification. Displayed below the title.
+</ParamField>
+
+<ParamField path="ActionButton" type="ButtonBase">
+  Optional call-to-action button rendered inside the bar. Accepts any `ButtonBase` subclass such as `Button` or `HyperlinkButton`. Default: `null`.
+</ParamField>
+
+<ParamField path="IsClosable" type="bool" default="true">
+  Shows (`true`) or hides (`false`) the built-in close button. Set to `false` for notifications that must not be dismissed manually, such as a critical connectivity error.
+</ParamField>
+
+<ParamField path="IsIconVisible" type="bool" default="true">
+  Shows or hides the severity icon. Default: `true`.
+</ParamField>
+
+<ParamField path="IconSource" type="IconSource">
+  Replaces the default severity icon with a custom `IconSource`. Default: `null` (uses the severity icon).
+</ParamField>
+
+<ParamField path="Content" type="object">
+  Custom content rendered below the message text. Use for supplemental UI such as a `ProgressBar` or a list of details.
+</ParamField>
+
+<ParamField path="ContentTemplate" type="DataTemplate">
+  `DataTemplate` used to render `Content` when `Content` is set to a data object.
+</ParamField>
+
+<ParamField path="CloseButtonStyle" type="Style">
+  Custom `Style` applied to the close button.
+</ParamField>
+
+<ParamField path="CloseButtonCommand" type="ICommand">
+  `ICommand` invoked when the close button is clicked, in addition to the default dismiss behavior.
+</ParamField>
+
+<ParamField path="CloseButtonCommandParameter" type="object">
+  Parameter passed to `CloseButtonCommand`.
+</ParamField>
+
+## Events
+
+<ParamField path="CloseButtonClick" type="TypedEventHandler&lt;InfoBar, object&gt;">
+  Raised when the user clicks the built-in close button, before the bar is dismissed. Does not fire when `IsOpen` is set to `false` programmatically.
+</ParamField>
+
+<ParamField path="Closing" type="TypedEventHandler&lt;InfoBar, InfoBarClosingEventArgs&gt;">
+  Raised just before `IsOpen` transitions to `false`. Set `args.Cancel = true` to prevent the bar from closing. `args.Reason` is `CloseButton` or `Programmatic`.
+</ParamField>
+
+<ParamField path="Closed" type="TypedEventHandler&lt;InfoBar, InfoBarClosedEventArgs&gt;">
+  Raised after `IsOpen` has transitioned to `false`. `args.Reason` indicates whether the user clicked the close button (`CloseButton`) or code closed it (`Programmatic`).
+</ParamField>
+
+## Advanced usage
+
+### InfoBar with an action button
+
+```xml
+<muxc:InfoBar x:Name="NetworkBar"
+              Title="No internet connection"
+              Message="Some features may be unavailable."
+              Severity="Error"
+              IsOpen="True"
+              IsClosable="False">
+    <muxc:InfoBar.ActionButton>
+        <Button Content="Retry" Click="RetryConnection_Click" />
+    </muxc:InfoBar.ActionButton>
+</muxc:InfoBar>
+```
+
+### Preventing accidental dismissal
+
+```csharp
+private void NetworkBar_Closing(InfoBar sender, InfoBarClosingEventArgs args)
+{
+    if (args.Reason == InfoBarCloseReason.CloseButton && IsConnecting)
+    {
+        // Don't allow closing while a retry is in progress
+        args.Cancel = true;
+    }
+}
+```
+
+### Displaying operation progress inside the bar
+
+```xml
+<muxc:InfoBar Title="Uploading files"
+              Message="Please wait while your files upload."
+              Severity="Informational"
+              IsClosable="False"
+              IsOpen="{x:Bind ViewModel.IsUploading, Mode=OneWay}">
+    <muxc:InfoBar.Content>
+        <ProgressBar IsIndeterminate="True" Margin="0,4,0,0" />
+    </muxc:InfoBar.Content>
+</muxc:InfoBar>
+```
+
+### Controlling InfoBar from a view model
+
+```csharp
+// ViewModel
+public bool ShowSaveSuccess
+{
+    get => _showSaveSuccess;
+    set => SetProperty(ref _showSaveSuccess, value);
+}
+
+// XAML binding
+// <muxc:InfoBar IsOpen="{x:Bind ViewModel.ShowSaveSuccess, Mode=TwoWay}" ... />
+
+// After save completes:
+ViewModel.ShowSaveSuccess = true;
+```
+
+<Note>
+  Place `InfoBar` near the top of the page content area, below the `TitleBar` or page header, so it is immediately visible without pushing important content off screen.
+</Note>

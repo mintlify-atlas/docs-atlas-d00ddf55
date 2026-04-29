@@ -1,0 +1,279 @@
+---
+title: "ScrollView control API reference — WinUI"
+description: "API reference for the WinUI ScrollView control. A high-performance scroller with scroll mode, zoom, anchor, and velocity APIs built on ScrollPresenter."
+---
+
+`ScrollView` is a WinUI container control that provides horizontal and vertical scrolling, pinch-to-zoom, and inertia-based touch input for any `UIElement` content. It is built on top of `ScrollPresenter` and replaces the older `ScrollViewer` with improved performance, Composition-layer animations, and a richer programmatic API including `ScrollTo`, `ScrollBy`, and `AddScrollVelocity`.
+
+## Key features
+
+- Independent horizontal and vertical scroll modes (`Enabled`, `Disabled`, `Auto`)
+- Scroll bar visibility control (`Auto`, `Visible`, `Hidden`)
+- Pinch-to-zoom with configurable `MinZoomFactor` and `MaxZoomFactor`
+- Content orientation hints for panels that lay out in a single direction
+- Scroll chaining and railing configuration for nested scroll scenarios
+- Programmatic scroll and zoom via `ScrollTo`, `ScrollBy`, `ZoomTo`, `ZoomBy`, and velocity APIs
+- Anchor-based layout stabilization with `RegisterAnchorCandidate`
+- Exposes the underlying `ScrollPresenter` for advanced customization
+
+## Basic usage
+
+```xml
+<ScrollView Width="400" Height="300">
+    <StackPanel>
+        <TextBlock Text="Item 1" />
+        <TextBlock Text="Item 2" />
+        <TextBlock Text="Item 3" />
+        <!-- Additional content -->
+    </StackPanel>
+</ScrollView>
+```
+
+### Horizontal-only scrolling
+
+```xml
+<ScrollView HorizontalScrollMode="Enabled"
+            VerticalScrollMode="Disabled"
+            HorizontalScrollBarVisibility="Auto"
+            VerticalScrollBarVisibility="Hidden">
+    <StackPanel Orientation="Horizontal">
+        <Rectangle Width="200" Height="150" Fill="SteelBlue" />
+        <Rectangle Width="200" Height="150" Fill="Tomato" />
+        <Rectangle Width="200" Height="150" Fill="SeaGreen" />
+    </StackPanel>
+</ScrollView>
+```
+
+## Properties
+
+### Scroll configuration
+
+<ParamField path="HorizontalScrollMode" type="ScrollingScrollMode">
+  Controls whether horizontal scrolling is allowed. Values: `Enabled`, `Disabled`, `Auto`. `Auto` enables scrolling only when content exceeds the viewport width.
+</ParamField>
+
+<ParamField path="VerticalScrollMode" type="ScrollingScrollMode">
+  Controls whether vertical scrolling is allowed. Values: `Enabled`, `Disabled`, `Auto`.
+</ParamField>
+
+<ParamField path="HorizontalScrollBarVisibility" type="ScrollingScrollBarVisibility">
+  Controls visibility of the horizontal scroll bar. Values: `Auto`, `Visible`, `Hidden`. Default: `Auto`.
+</ParamField>
+
+<ParamField path="VerticalScrollBarVisibility" type="ScrollingScrollBarVisibility">
+  Controls visibility of the vertical scroll bar. Values: `Auto`, `Visible`, `Hidden`. Default: `Auto`.
+</ParamField>
+
+<ParamField path="ContentOrientation" type="ScrollingContentOrientation">
+  Hints at whether content scrolls primarily in one direction. Used to optimize measurement. Values: `Vertical`, `Horizontal`, `Both`, `None`.
+</ParamField>
+
+<ParamField path="HorizontalScrollChainMode" type="ScrollingChainMode">
+  Determines whether horizontal scroll input chains to a parent scroller when the content boundary is reached. Values: `Auto`, `Always`, `Never`.
+</ParamField>
+
+<ParamField path="VerticalScrollChainMode" type="ScrollingChainMode">
+  Determines whether vertical scroll input chains to a parent scroller. Values: `Auto`, `Always`, `Never`.
+</ParamField>
+
+<ParamField path="HorizontalScrollRailMode" type="ScrollingRailMode">
+  Controls whether horizontal panning is locked ("railed") to prevent diagonal drift. Values: `Enabled`, `Disabled`.
+</ParamField>
+
+<ParamField path="VerticalScrollRailMode" type="ScrollingRailMode">
+  Controls whether vertical panning is railed. Values: `Enabled`, `Disabled`.
+</ParamField>
+
+<ParamField path="IgnoredInputKinds" type="ScrollingInputKinds">
+  Bitmask of input kinds that the `ScrollView` ignores. Use to suppress touch, mouse wheel, keyboard, or pen input selectively.
+</ParamField>
+
+### Zoom configuration
+
+<ParamField path="ZoomMode" type="ScrollingZoomMode">
+  Enables or disables pinch-to-zoom. Values: `Enabled`, `Disabled`.
+</ParamField>
+
+<ParamField path="ZoomChainMode" type="ScrollingChainMode">
+  Determines whether zoom input chains to a parent scroller. Values: `Auto`, `Always`, `Never`.
+</ParamField>
+
+<ParamField path="MinZoomFactor" type="double" default="0.1">
+  Minimum allowed zoom factor. Must be greater than zero.
+</ParamField>
+
+<ParamField path="MaxZoomFactor" type="double" default="10.0">
+  Maximum allowed zoom factor. Must be greater than or equal to `MinZoomFactor`.
+</ParamField>
+
+### Read-only state
+
+<ParamField path="HorizontalOffset" type="double">
+  Current horizontal scroll position in pixels (read-only).
+</ParamField>
+
+<ParamField path="VerticalOffset" type="double">
+  Current vertical scroll position in pixels (read-only).
+</ParamField>
+
+<ParamField path="ZoomFactor" type="float">
+  Current zoom factor (read-only).
+</ParamField>
+
+<ParamField path="ExtentWidth" type="double">
+  Total width of the scrollable content (read-only).
+</ParamField>
+
+<ParamField path="ExtentHeight" type="double">
+  Total height of the scrollable content (read-only).
+</ParamField>
+
+<ParamField path="ViewportWidth" type="double">
+  Width of the visible area (read-only).
+</ParamField>
+
+<ParamField path="ViewportHeight" type="double">
+  Height of the visible area (read-only).
+</ParamField>
+
+<ParamField path="ScrollableWidth" type="double">
+  Maximum horizontal offset — `ExtentWidth` minus `ViewportWidth` (read-only).
+</ParamField>
+
+<ParamField path="ScrollableHeight" type="double">
+  Maximum vertical offset — `ExtentHeight` minus `ViewportHeight` (read-only).
+</ParamField>
+
+<ParamField path="State" type="ScrollingInteractionState">
+  Current interaction state: `Idle`, `Interaction`, or `Inertia` (read-only).
+</ParamField>
+
+<ParamField path="ScrollPresenter" type="ScrollPresenter">
+  The underlying `ScrollPresenter` instance. Use for advanced scenarios such as connecting an `AnnotatedScrollBar` (read-only).
+</ParamField>
+
+### Anchor
+
+<ParamField path="HorizontalAnchorRatio" type="double" default="0.0">
+  Horizontal anchor ratio (0.0–1.0) used for layout stabilization. `0.0` anchors to the near edge, `1.0` to the far edge.
+</ParamField>
+
+<ParamField path="VerticalAnchorRatio" type="double" default="0.0">
+  Vertical anchor ratio used for layout stabilization.
+</ParamField>
+
+<ParamField path="CurrentAnchor" type="UIElement">
+  The element currently being used as the scroll anchor (read-only).
+</ParamField>
+
+## Methods
+
+<ParamField path="ScrollTo(double horizontalOffset, double verticalOffset)" type="int">
+  Animates the view to an absolute offset. Returns a correlation ID you can match against `ScrollCompleted`. An overload accepts `ScrollingScrollOptions` to control animation.
+</ParamField>
+
+<ParamField path="ScrollBy(double horizontalOffsetDelta, double verticalOffsetDelta)" type="int">
+  Scrolls by a relative offset delta. Returns a correlation ID. An overload accepts `ScrollingScrollOptions`.
+</ParamField>
+
+<ParamField path="AddScrollVelocity(Vector2 offsetsVelocity, IReference&lt;Vector2&gt; inertiaDecayRate)" type="int">
+  Adds a scroll velocity, producing inertia-based scrolling. Pass `null` for `inertiaDecayRate` to use the default.
+</ParamField>
+
+<ParamField path="ZoomTo(float zoomFactor, IReference&lt;Vector2&gt; centerPoint)" type="int">
+  Animates to an absolute zoom factor, centered on `centerPoint`. An overload accepts `ScrollingZoomOptions`.
+</ParamField>
+
+<ParamField path="ZoomBy(float zoomFactorDelta, IReference&lt;Vector2&gt; centerPoint)" type="int">
+  Applies a relative zoom factor delta. An overload accepts `ScrollingZoomOptions`.
+</ParamField>
+
+<ParamField path="RegisterAnchorCandidate(UIElement element)" type="void">
+  Registers an element as a candidate for scroll anchoring.
+</ParamField>
+
+<ParamField path="UnregisterAnchorCandidate(UIElement element)" type="void">
+  Removes an element from the anchor candidate list.
+</ParamField>
+
+## Events
+
+<ParamField path="ViewChanged" type="TypedEventHandler&lt;ScrollView, object&gt;">
+  Raised after the offset or zoom factor changes, whether from user interaction or programmatic scroll.
+</ParamField>
+
+<ParamField path="StateChanged" type="TypedEventHandler&lt;ScrollView, object&gt;">
+  Raised when the `State` property changes between `Idle`, `Interaction`, and `Inertia`.
+</ParamField>
+
+<ParamField path="ExtentChanged" type="TypedEventHandler&lt;ScrollView, object&gt;">
+  Raised when the content extent (total scrollable size) changes.
+</ParamField>
+
+<ParamField path="ScrollAnimationStarting" type="TypedEventHandler&lt;ScrollView, ScrollingScrollAnimationStartingEventArgs&gt;">
+  Raised just before a scroll animation starts. Use to customize or replace the `CompositionAnimation`.
+</ParamField>
+
+<ParamField path="ZoomAnimationStarting" type="TypedEventHandler&lt;ScrollView, ScrollingZoomAnimationStartingEventArgs&gt;">
+  Raised just before a zoom animation starts.
+</ParamField>
+
+<ParamField path="ScrollCompleted" type="TypedEventHandler&lt;ScrollView, ScrollingScrollCompletedEventArgs&gt;">
+  Raised when a programmatic scroll operation completes. Match the correlation ID to the value returned by `ScrollTo` or `ScrollBy`.
+</ParamField>
+
+<ParamField path="ZoomCompleted" type="TypedEventHandler&lt;ScrollView, ScrollingZoomCompletedEventArgs&gt;">
+  Raised when a programmatic zoom operation completes.
+</ParamField>
+
+<ParamField path="BringingIntoView" type="TypedEventHandler&lt;ScrollView, ScrollingBringingIntoViewEventArgs&gt;">
+  Raised when `BringIntoView` is called on a descendant element. Allows you to adjust the target offset or cancel the operation.
+</ParamField>
+
+<ParamField path="AnchorRequested" type="TypedEventHandler&lt;ScrollView, ScrollingAnchorRequestedEventArgs&gt;">
+  Raised when the scroll anchor element is being selected. Allows you to override anchor candidate selection.
+</ParamField>
+
+## Advanced usage
+
+### Programmatic scroll with completion callback
+
+```csharp
+private void ScrollToTop_Click(object sender, RoutedEventArgs e)
+{
+    int correlationId = MyScrollView.ScrollTo(0, 0);
+}
+
+private void MyScrollView_ScrollCompleted(ScrollView sender,
+    ScrollingScrollCompletedEventArgs args)
+{
+    // args.CorrelationId matches the value returned by ScrollTo/ScrollBy
+    System.Diagnostics.Debug.WriteLine($"Scroll {args.CorrelationId} completed.");
+}
+```
+
+### Zoom-enabled image viewer
+
+```xml
+<ScrollView x:Name="ImageScroller"
+            ZoomMode="Enabled"
+            MinZoomFactor="0.5"
+            MaxZoomFactor="4.0"
+            HorizontalScrollBarVisibility="Auto"
+            VerticalScrollBarVisibility="Auto">
+    <Image Source="ms-appx:///Assets/photo.jpg"
+           Stretch="None" />
+</ScrollView>
+```
+
+```csharp
+// Reset zoom to 1× centered on the viewport
+private void ResetZoom_Click(object sender, RoutedEventArgs e)
+{
+    ImageScroller.ZoomTo(1.0f, null);
+}
+```
+
+<Note>
+  `ScrollView` exposes a `ScrollPresenter` property for scenarios that require direct access to the Composition layer, such as wiring up an `AnnotatedScrollBar`. For most use cases, the higher-level `ScrollView` API is sufficient.
+</Note>

@@ -1,0 +1,164 @@
+---
+title: "TwoPaneView control API reference — WinUI"
+description: "API reference for WinUI TwoPaneView. Adaptive dual-pane layout that switches between wide, tall, and single-pane modes based on available window space."
+---
+
+`TwoPaneView` is a WinUI layout control that displays two content panes side-by-side or stacked, adapting automatically to the available window space. It is designed for apps that target foldable or dual-screen devices as well as regular windows, automatically switching between a **Wide** (left-right), **Tall** (top-bottom), or **SinglePane** layout depending on the measured dimensions.
+
+## Key features
+
+- Three automatic layout modes: `SinglePane`, `Wide`, and `Tall`
+- Configurable thresholds (`MinWideModeWidth`, `MinTallModeHeight`) that control when each mode activates
+- Priority-based pane visibility: `PanePriority` selects which pane to show in `SinglePane` mode
+- Independent pane sizing via `Pane1Length` and `Pane2Length` (`GridLength`)
+- `WideModeConfiguration` and `TallModeConfiguration` enums to reverse pane order
+- `ModeChanged` event for responding to layout transitions
+
+## Basic usage
+
+```xml
+<muxc:TwoPaneView x:Name="MyTwoPaneView"
+                  MinWideModeWidth="800"
+                  MinTallModeHeight="600"
+                  PanePriority="Pane1">
+    <muxc:TwoPaneView.Pane1>
+        <Grid Background="{ThemeResource LayerFillColorDefaultBrush}">
+            <TextBlock Text="Primary pane"
+                       VerticalAlignment="Center"
+                       HorizontalAlignment="Center" />
+        </Grid>
+    </muxc:TwoPaneView.Pane1>
+    <muxc:TwoPaneView.Pane2>
+        <Grid Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+            <TextBlock Text="Secondary pane"
+                       VerticalAlignment="Center"
+                       HorizontalAlignment="Center" />
+        </Grid>
+    </muxc:TwoPaneView.Pane2>
+</muxc:TwoPaneView>
+```
+
+## Properties
+
+### Pane content
+
+<ParamField path="Pane1" type="UIElement">
+  Content for the first pane. In `Wide` mode this is on the left (or right if `WideModeConfiguration` is `RightLeft`). In `Tall` mode this is on top (or bottom if `TallModeConfiguration` is `BottomTop`). Default: `null`.
+</ParamField>
+
+<ParamField path="Pane2" type="UIElement">
+  Content for the second pane. Default: `null`.
+</ParamField>
+
+### Pane sizing
+
+<ParamField path="Pane1Length" type="GridLength">
+  `GridLength` for the first pane's column (Wide) or row (Tall). Supports fixed pixel values, `Auto`, and star (`*`) sizing. Default: `Auto`.
+</ParamField>
+
+<ParamField path="Pane2Length" type="GridLength">
+  `GridLength` for the second pane's column or row. Default: `Auto`.
+</ParamField>
+
+### Layout control
+
+<ParamField path="PanePriority" type="TwoPaneViewPriority" default="Pane1">
+  Determines which pane is shown when the layout is in `SinglePane` mode. Values: `Pane1`, `Pane2`.
+</ParamField>
+
+<ParamField path="Mode" type="TwoPaneViewMode">
+  The current layout mode (read-only). Values: `SinglePane`, `Wide`, `Tall`. Updated automatically when the control is measured.
+</ParamField>
+
+<ParamField path="MinWideModeWidth" type="double">
+  Minimum total width in pixels required to activate `Wide` mode (side-by-side panes). If the control is narrower than this value, `SinglePane` or `Tall` mode is used instead. Default: `641`.
+</ParamField>
+
+<ParamField path="MinTallModeHeight" type="double">
+  Minimum total height in pixels required to activate `Tall` mode (stacked panes). If the control is shorter than this value, `SinglePane` is used instead. Default: `641`.
+</ParamField>
+
+<ParamField path="WideModeConfiguration" type="TwoPaneViewWideModeConfiguration" default="LeftRight">
+  Controls pane order in `Wide` mode. Values: `LeftRight` (Pane1 on left), `RightLeft` (Pane1 on right), `SinglePane` (show only `PanePriority` pane even when wide).
+</ParamField>
+
+<ParamField path="TallModeConfiguration" type="TwoPaneViewTallModeConfiguration" default="TopBottom">
+  Controls pane order in `Tall` mode. Values: `TopBottom` (Pane1 on top), `BottomTop` (Pane1 on bottom), `SinglePane`.
+</ParamField>
+
+## Events
+
+<ParamField path="ModeChanged" type="TypedEventHandler&lt;TwoPaneView, object&gt;">
+  Raised whenever `Mode` changes. Use this event to update pane content or UI elements that depend on the current layout mode.
+</ParamField>
+
+## Advanced usage
+
+### Responding to mode changes
+
+Update your UI when the layout switches between single and dual panes:
+
+```csharp
+private void TwoPaneView_ModeChanged(TwoPaneView sender, object args)
+{
+    switch (sender.Mode)
+    {
+        case TwoPaneViewMode.SinglePane:
+            // Show navigation controls for switching panes
+            PaneSwitcher.Visibility = Visibility.Visible;
+            break;
+        case TwoPaneViewMode.Wide:
+        case TwoPaneViewMode.Tall:
+            // Hide manual navigation — both panes are visible
+            PaneSwitcher.Visibility = Visibility.Collapsed;
+            break;
+    }
+}
+```
+
+### Master-detail layout with equal columns
+
+```xml
+<muxc:TwoPaneView MinWideModeWidth="700"
+                  MinTallModeHeight="0"
+                  Pane1Length="300"
+                  Pane2Length="*"
+                  WideModeConfiguration="LeftRight"
+                  ModeChanged="TwoPaneView_ModeChanged">
+    <muxc:TwoPaneView.Pane1>
+        <!-- Master list -->
+        <ListView x:Name="ItemList"
+                  SelectionChanged="ItemList_SelectionChanged">
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding Name}" />
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+    </muxc:TwoPaneView.Pane1>
+    <muxc:TwoPaneView.Pane2>
+        <!-- Detail view -->
+        <Frame x:Name="DetailFrame" />
+    </muxc:TwoPaneView.Pane2>
+</muxc:TwoPaneView>
+```
+
+### Switching panes manually in SinglePane mode
+
+When `Mode` is `SinglePane`, toggle `PanePriority` to let the user navigate between panes:
+
+```csharp
+private void ShowDetailPane_Click(object sender, RoutedEventArgs e)
+{
+    MyTwoPaneView.PanePriority = TwoPaneViewPriority.Pane2;
+}
+
+private void ShowListPane_Click(object sender, RoutedEventArgs e)
+{
+    MyTwoPaneView.PanePriority = TwoPaneViewPriority.Pane1;
+}
+```
+
+<Note>
+  `TwoPaneView` responds to its own measured size, not to the window size. If you place it inside a container that is always large, `SinglePane` mode may never activate. Make sure the control can shrink to its minimum dimensions.
+</Note>

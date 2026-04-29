@@ -1,0 +1,290 @@
+---
+title: "Navigation Controls in WinUI: Views and Indicators"
+description: "Use NavigationView, TabView, BreadcrumbBar, PipsPager, and SelectorBar to implement navigation shells, tab strips, breadcrumbs, and page indicators."
+---
+
+WinUI navigation controls cover a range of UI patterns — from app-level shells to page-level indicators. Each control is built to meet Windows accessibility and adaptive layout requirements with minimal configuration.
+
+## NavigationView
+
+`NavigationView` is the primary navigation shell for WinUI applications. It provides a pane on the left or top of the window, a back button, a settings item, and an auto-collapsing behavior based on window width.
+
+<Tabs>
+  <Tab title="Left pane">
+```xml
+<muxc:NavigationView
+    x:Name="NavView"
+    PaneTitle="My App"
+    IsSettingsVisible="True"
+    CompactModeThresholdWidth="480"
+    ItemInvoked="NavView_ItemInvoked"
+    SelectionChanged="NavView_SelectionChanged"
+    BackRequested="NavView_BackRequested">
+    <muxc:NavigationView.MenuItems>
+        <muxc:NavigationViewItem Content="Home" Icon="Home" />
+        <muxc:NavigationViewItem Content="Browse" Icon="Shop" />
+        <muxc:NavigationViewItemSeparator />
+        <muxc:NavigationViewItemHeader Content="Library" />
+        <muxc:NavigationViewItem Content="Music" Icon="Audio" />
+        <muxc:NavigationViewItem Content="Videos" Icon="Video" />
+    </muxc:NavigationView.MenuItems>
+    <Frame x:Name="ContentFrame" />
+</muxc:NavigationView>
+```
+  </Tab>
+  <Tab title="Top pane">
+```xml
+<muxc:NavigationView
+    PaneDisplayMode="Top"
+    IsSettingsVisible="False">
+    <muxc:NavigationView.MenuItems>
+        <muxc:NavigationViewItem Content="Overview" />
+        <muxc:NavigationViewItem Content="Details" />
+        <muxc:NavigationViewItem Content="History" />
+    </muxc:NavigationView.MenuItems>
+    <Frame x:Name="ContentFrame" />
+</muxc:NavigationView>
+```
+  </Tab>
+  <Tab title="InfoBadge on item">
+```xml
+<muxc:NavigationViewItem Content="Home" Icon="Home">
+    <muxc:NavigationViewItem.InfoBadge>
+        <muxc:InfoBadge Value="3" />
+    </muxc:NavigationViewItem.InfoBadge>
+</muxc:NavigationViewItem>
+```
+  </Tab>
+  <Tab title="Hierarchical items">
+```xml
+<muxc:NavigationViewItem Content="Services" Icon="Globe">
+    <muxc:NavigationViewItem.MenuItems>
+        <muxc:NavigationViewItem Content="Web" />
+        <muxc:NavigationViewItem Content="API" />
+    </muxc:NavigationViewItem.MenuItems>
+</muxc:NavigationViewItem>
+```
+  </Tab>
+</Tabs>
+
+### Key properties
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `PaneDisplayMode` | `NavigationViewPaneDisplayMode` | `Auto` | `Auto`, `Left`, `Top`, `LeftCompact`, or `LeftMinimal`. |
+| `IsPaneOpen` | `Boolean` | `true` | Whether the pane is currently expanded. |
+| `CompactModeThresholdWidth` | `Double` | `641` | Window width below which the pane collapses to compact. |
+| `ExpandedModeThresholdWidth` | `Double` | `1008` | Window width above which the pane stays fully expanded. |
+| `OpenPaneLength` | `Double` | `320` | Width of the pane when fully open. |
+| `CompactPaneLength` | `Double` | `48` | Width of the pane in compact mode. |
+| `IsSettingsVisible` | `Boolean` | `true` | Show or hide the built-in settings item. |
+| `IsBackButtonVisible` | `NavigationViewBackButtonVisible` | `Auto` | `Auto`, `Visible`, or `Collapsed`. |
+| `PaneTitle` | `String` | — | Text shown at the top of the pane. |
+| `MenuItems` | `IVector<Object>` | — | Collection of `NavigationViewItem`, separators, and headers. |
+| `MenuItemsSource` | `Object` | — | Data source for menu items when using data binding. |
+| `SelectedItem` | `Object` | — | The currently selected item. |
+| `FooterMenuItems` | `IVector<Object>` | — | Items pinned to the bottom of the pane. |
+
+### Events
+
+| Event | Description |
+|---|---|
+| `ItemInvoked` | Fires when the user taps any menu item. |
+| `SelectionChanged` | Fires when the selected item changes. |
+| `DisplayModeChanged` | Fires when the display mode transitions between Minimal, Compact, and Expanded. |
+| `BackRequested` | Fires when the user presses the back button. |
+| `Expanding` / `Collapsed` | Fire when a hierarchical `NavigationViewItem` expands or collapses. |
+
+---
+
+## TabView
+
+`TabView` provides a tab strip modeled after browser tabs. Each `TabViewItem` has a header, an icon, and an optional close button. Tabs can be reordered by drag-and-drop and torn out into separate windows.
+
+<Tabs>
+  <Tab title="Static tabs">
+```xml
+<muxc:TabView
+    IsAddTabButtonVisible="True"
+    AddTabButtonClick="TabView_AddTabButtonClick"
+    TabCloseRequested="TabView_TabCloseRequested">
+    <muxc:TabViewItem Header="Home" IsClosable="False">
+        <muxc:TabViewItem.IconSource>
+            <muxc:SymbolIconSource Symbol="Home" />
+        </muxc:TabViewItem.IconSource>
+        <Frame x:Name="HomeFrame" />
+    </muxc:TabViewItem>
+    <muxc:TabViewItem Header="Document 1">
+        <TextEditor />
+    </muxc:TabViewItem>
+</muxc:TabView>
+```
+  </Tab>
+  <Tab title="Data-bound tabs">
+```xml
+<muxc:TabView
+    TabItemsSource="{x:Bind Documents}"
+    SelectedIndex="0"
+    TabCloseRequested="TabView_TabCloseRequested">
+    <muxc:TabView.TabItemTemplate>
+        <DataTemplate x:DataType="local:Document">
+            <muxc:TabViewItem
+                Header="{x:Bind Title}"
+                IsClosable="True" />
+        </DataTemplate>
+    </muxc:TabView.TabItemTemplate>
+</muxc:TabView>
+```
+  </Tab>
+</Tabs>
+
+### Key properties
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `TabItems` | `IVector<Object>` | — | Inline collection of `TabViewItem` elements. |
+| `TabItemsSource` | `Object` | — | Data source when binding tab items. |
+| `SelectedIndex` | `Int32` | `0` | Zero-based index of the active tab. |
+| `TabWidthMode` | `TabViewWidthMode` | `Equal` | `Equal`, `SizeToContent`, or `Compact`. |
+| `IsAddTabButtonVisible` | `Boolean` | `true` | Show the `+` add-tab button. |
+| `CanReorderTabs` | `Boolean` | `true` | Allow drag-to-reorder within the strip. |
+| `CanDragTabs` | `Boolean` | `false` | Allow dragging tabs out of the strip. |
+| `CanTearOutTabs` | `Boolean` | `false` | Allow tearing tabs into separate windows. |
+| `CloseButtonOverlayMode` | `TabViewCloseButtonOverlayMode` | `Auto` | `Auto`, `OnPointerOver`, or `Always`. |
+
+### Events
+
+| Event | Description |
+|---|---|
+| `TabCloseRequested` | Fires when the user clicks a tab's close button. |
+| `AddTabButtonClick` | Fires when the user clicks the add-tab button. |
+| `SelectionChanged` | Fires when the active tab changes. |
+| `TabDragStarting` / `TabDragCompleted` | Fire during a drag operation. |
+
+---
+
+## BreadcrumbBar
+
+`BreadcrumbBar` renders a horizontal sequence of items representing a navigation path. When the available width shrinks, leading items collapse into an overflow flyout. Clicking any item fires the `ItemClicked` event.
+
+```xml
+<muxc:BreadcrumbBar
+    x:Name="Breadcrumb"
+    ItemsSource="{x:Bind NavigationPath}"
+    ItemClicked="Breadcrumb_ItemClicked">
+    <muxc:BreadcrumbBar.ItemTemplate>
+        <DataTemplate x:DataType="local:Crumb">
+            <muxc:BreadcrumbBarItem Content="{x:Bind Label}" />
+        </DataTemplate>
+    </muxc:BreadcrumbBar.ItemTemplate>
+</muxc:BreadcrumbBar>
+```
+
+### Key properties
+
+| Property | Type | Description |
+|---|---|---|
+| `ItemsSource` | `Object` | The data collection that backs the breadcrumb items. |
+| `ItemTemplate` | `Object` | Template used to render each item in the bar. |
+
+### Events
+
+| Event | Description |
+|---|---|
+| `ItemClicked` | Fires with the clicked item's `Index` and `Item` values. |
+
+---
+
+## PipsPager
+
+`PipsPager` shows a row of small dots (pips) indicating which page in a sequence is currently selected. It is typically placed below a `FlipView` or similar paginated control.
+
+<Tabs>
+  <Tab title="Basic">
+```xml
+<muxc:PipsPager
+    x:Name="Pager"
+    NumberOfPages="5"
+    SelectedPageIndex="0"
+    MaxVisiblePips="5"
+    Orientation="Horizontal"
+    SelectedIndexChanged="Pager_SelectedIndexChanged" />
+```
+  </Tab>
+  <Tab title="With navigation buttons">
+```xml
+<muxc:PipsPager
+    NumberOfPages="10"
+    SelectedPageIndex="0"
+    MaxVisiblePips="7"
+    PreviousButtonVisibility="VisibleOnPointerOver"
+    NextButtonVisibility="VisibleOnPointerOver" />
+```
+  </Tab>
+</Tabs>
+
+### Key properties
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `NumberOfPages` | `Int32` | `-1` | Total number of pages. Set to `-1` for an unbounded list. |
+| `SelectedPageIndex` | `Int32` | `0` | Zero-based index of the selected page. |
+| `MaxVisiblePips` | `Int32` | `5` | Maximum number of pips to show at once before scrolling. |
+| `Orientation` | `Orientation` | `Horizontal` | `Horizontal` or `Vertical` pip layout. |
+| `PreviousButtonVisibility` | `PipsPagerButtonVisibility` | `Collapsed` | `Visible`, `VisibleOnPointerOver`, or `Collapsed`. |
+| `NextButtonVisibility` | `PipsPagerButtonVisibility` | `Collapsed` | `Visible`, `VisibleOnPointerOver`, or `Collapsed`. |
+| `WrapMode` | `PipsPagerWrapMode` | `None` | `None` or `Wrap` — whether selection wraps around the ends. |
+
+### Events
+
+| Event | Description |
+|---|---|
+| `SelectedIndexChanged` | Fires when `SelectedPageIndex` changes. |
+
+---
+
+## SelectorBar
+
+`SelectorBar` provides a horizontally scrolling row of `SelectorBarItem` elements, each with optional text and an icon. It behaves like a segmented control, making exactly one item selected at a time.
+
+```xml
+<muxc:SelectorBar SelectionChanged="SelectorBar_SelectionChanged">
+    <muxc:SelectorBar.Items>
+        <muxc:SelectorBarItem Text="All">
+            <muxc:SelectorBarItem.Icon>
+                <muxc:SymbolIconElement Symbol="Globe" />
+            </muxc:SelectorBarItem.Icon>
+        </muxc:SelectorBarItem>
+        <muxc:SelectorBarItem Text="Recent">
+            <muxc:SelectorBarItem.Icon>
+                <muxc:SymbolIconElement Symbol="Clock" />
+            </muxc:SelectorBarItem.Icon>
+        </muxc:SelectorBarItem>
+        <muxc:SelectorBarItem Text="Favorites">
+            <muxc:SelectorBarItem.Icon>
+                <muxc:SymbolIconElement Symbol="Favorite" />
+            </muxc:SelectorBarItem.Icon>
+        </muxc:SelectorBarItem>
+    </muxc:SelectorBar.Items>
+</muxc:SelectorBar>
+```
+
+### Key properties
+
+| Property | Type | Description |
+|---|---|---|
+| `Items` | `IVector<SelectorBarItem>` | The collection of items in the bar. |
+| `SelectedItem` | `SelectorBarItem` | The currently selected item. |
+
+Each `SelectorBarItem` has:
+
+| Property | Type | Description |
+|---|---|---|
+| `Text` | `String` | Label text shown below the icon. |
+| `Icon` | `IconElement` | Optional icon shown above the text. |
+
+### Events
+
+| Event | Description |
+|---|---|
+| `SelectionChanged` | Fires when the selected `SelectorBarItem` changes. |

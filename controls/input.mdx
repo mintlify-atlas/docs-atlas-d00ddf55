@@ -1,0 +1,384 @@
+---
+title: "Input Controls in WinUI: Forms, Ratings, and Gestures"
+description: "Implement numeric entry, radio groups, star ratings, split buttons, dropdown buttons, color pickers, and swipe gestures with WinUI input controls."
+---
+
+WinUI input controls cover a broad range of user interaction patterns, from simple numeric fields to touch-based swipe menus. All of them integrate with the keyboard, gamepad, and screen reader accessibility tree by default.
+
+## NumberBox
+
+`NumberBox` is a text field that accepts only numeric input. It supports minimum and maximum clamping, spin button increment/decrement, and — when `AcceptsExpression` is enabled — evaluates simple arithmetic entered by the user.
+
+<Tabs>
+  <Tab title="Basic">
+```xml
+<muxc:NumberBox
+    Header="Quantity"
+    PlaceholderText="Enter a number"
+    Minimum="0"
+    Maximum="100"
+    SmallChange="1"
+    LargeChange="10"
+    ValidationMode="InvalidInputOverwritten"
+    ValueChanged="NumberBox_ValueChanged" />
+```
+  </Tab>
+  <Tab title="Spin buttons">
+```xml
+<muxc:NumberBox
+    Header="Font size"
+    Value="12"
+    Minimum="8"
+    Maximum="72"
+    SmallChange="1"
+    SpinButtonPlacementMode="Inline" />
+```
+  </Tab>
+  <Tab title="Expression evaluation">
+```xml
+<muxc:NumberBox
+    Header="Calculate"
+    AcceptsExpression="True"
+    PlaceholderText="e.g. 2 + 2"
+    SpinButtonPlacementMode="Compact" />
+```
+  </Tab>
+</Tabs>
+
+### Key properties
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `Value` | `Double` | `NaN` | The current numeric value. `NaN` indicates no value is set. |
+| `Minimum` | `Double` | `Double.MinValue` | Lower bound; values below this are clamped or rejected. |
+| `Maximum` | `Double` | `Double.MaxValue` | Upper bound; values above this are clamped or rejected. |
+| `SmallChange` | `Double` | `1` | Increment applied by spin buttons or arrow keys. |
+| `LargeChange` | `Double` | `10` | Increment applied by Page Up/Page Down. |
+| `SpinButtonPlacementMode` | `NumberBoxSpinButtonPlacementMode` | `Hidden` | `Hidden`, `Compact`, or `Inline`. |
+| `ValidationMode` | `NumberBoxValidationMode` | `InvalidInputOverwritten` | `InvalidInputOverwritten` resets bad input; `Disabled` allows it. |
+| `AcceptsExpression` | `Boolean` | `false` | Enable arithmetic expression evaluation. |
+| `IsWrapEnabled` | `Boolean` | `false` | Wrap from `Maximum` back to `Minimum` and vice versa. |
+| `Header` | `Object` | — | Label displayed above the input. |
+| `PlaceholderText` | `String` | — | Ghost text shown when the field is empty. |
+| `Description` | `Object` | — | Helper text shown below the input. |
+
+### Events
+
+| Event | Description |
+|---|---|
+| `ValueChanged` | Fires with `OldValue` and `NewValue` when the numeric value changes. |
+
+---
+
+## RadioButtons
+
+`RadioButtons` manages a group of mutually exclusive radio button options. It handles keyboard navigation, provides a consistent selection model, and supports multi-column layouts.
+
+<Tabs>
+  <Tab title="Inline items">
+```xml
+<muxc:RadioButtons
+    Header="Choose a theme"
+    SelectedIndex="0"
+    SelectionChanged="RadioButtons_SelectionChanged">
+    <x:String>Light</x:String>
+    <x:String>Dark</x:String>
+    <x:String>System default</x:String>
+</muxc:RadioButtons>
+```
+  </Tab>
+  <Tab title="Data bound">
+```xml
+<muxc:RadioButtons
+    Header="Select color"
+    ItemsSource="{x:Bind Colors}"
+    SelectedIndex="0"
+    MaxColumns="2"
+    SelectionChanged="RadioButtons_SelectionChanged" />
+```
+  </Tab>
+</Tabs>
+
+### Key properties
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `Items` | `IVector<Object>` | — | Inline item collection. |
+| `ItemsSource` | `Object` | — | Data source for binding. |
+| `SelectedIndex` | `Int32` | `-1` | Zero-based index of the selected item. |
+| `SelectedItem` | `Object` | — | The selected item object. |
+| `MaxColumns` | `Int32` | `1` | Number of columns to arrange items in. |
+| `Header` | `Object` | — | Label shown above the group. |
+| `ItemTemplate` | `Object` | — | Template used to render each item. |
+
+### Events
+
+| Event | Description |
+|---|---|
+| `SelectionChanged` | Fires when the selected radio button changes. |
+
+---
+
+## RatingControl
+
+`RatingControl` renders a row of star (or custom glyph/image) items that the user can click or touch to set a rating value. It also supports a read-only display mode and a placeholder value for showing an average.
+
+<Tabs>
+  <Tab title="Basic">
+```xml
+<muxc:RatingControl
+    Value="3"
+    MaxRating="5"
+    IsClearEnabled="True"
+    ValueChanged="Rating_ValueChanged" />
+```
+  </Tab>
+  <Tab title="Read-only with placeholder">
+```xml
+<muxc:RatingControl
+    IsReadOnly="True"
+    PlaceholderValue="3.7"
+    MaxRating="5"
+    Caption="(128 reviews)" />
+```
+  </Tab>
+  <Tab title="Custom glyphs">
+```xml
+<muxc:RatingControl Value="4" MaxRating="5">
+    <muxc:RatingControl.ItemInfo>
+        <muxc:RatingItemFontInfo
+            Glyph="&#xE735;"
+            UnsetGlyph="&#xE734;" />
+    </muxc:RatingControl.ItemInfo>
+</muxc:RatingControl>
+```
+  </Tab>
+</Tabs>
+
+### Key properties
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `Value` | `Double` | `-1` | Current rating. `-1` means no rating is set. |
+| `MaxRating` | `Int32` | `5` | Number of rating items to display. |
+| `PlaceholderValue` | `Double` | `-1` | Ghost value shown when `Value` is `-1`. |
+| `IsReadOnly` | `Boolean` | `false` | Prevent user interaction. |
+| `IsClearEnabled` | `Boolean` | `true` | Allow clicking the current star to clear the value. |
+| `InitialSetValue` | `Int32` | `1` | Rating applied on first click when no value is set. |
+| `Caption` | `String` | — | Text displayed to the right of the stars. |
+| `ItemInfo` | `RatingItemInfo` | — | `RatingItemFontInfo` or `RatingItemImageInfo` for custom visuals. |
+
+### Events
+
+| Event | Description |
+|---|---|
+| `ValueChanged` | Fires when the user changes the rating value. |
+
+---
+
+## SplitButton
+
+`SplitButton` presents two clickable regions in a single control: the left area triggers a primary action, and the right chevron opens a `Flyout`. A `ToggleSplitButton` variant adds a toggle state to the primary area.
+
+<Tabs>
+  <Tab title="SplitButton">
+```xml
+<muxc:SplitButton
+    Content="Save"
+    Click="SplitButton_Click">
+    <muxc:SplitButton.Flyout>
+        <MenuFlyout>
+            <MenuFlyoutItem Text="Save as..." />
+            <MenuFlyoutItem Text="Save a copy" />
+            <MenuFlyoutItem Text="Auto-save" />
+        </MenuFlyout>
+    </muxc:SplitButton.Flyout>
+</muxc:SplitButton>
+```
+  </Tab>
+  <Tab title="ToggleSplitButton">
+```xml
+<muxc:ToggleSplitButton
+    IsChecked="False"
+    IsCheckedChanged="ToggleSplitButton_IsCheckedChanged">
+    <muxc:ToggleSplitButton.Content>
+        <SymbolIcon Symbol="Bold" />
+    </muxc:ToggleSplitButton.Content>
+    <muxc:ToggleSplitButton.Flyout>
+        <MenuFlyout>
+            <MenuFlyoutItem Text="Bold" />
+            <MenuFlyoutItem Text="Italic" />
+            <MenuFlyoutItem Text="Underline" />
+        </MenuFlyout>
+    </muxc:ToggleSplitButton.Flyout>
+</muxc:ToggleSplitButton>
+```
+  </Tab>
+</Tabs>
+
+### Key properties (`SplitButton`)
+
+| Property | Type | Description |
+|---|---|---|
+| `Flyout` | `FlyoutBase` | The flyout opened by the secondary chevron. |
+| `Command` | `ICommand` | Command executed when the primary area is clicked. |
+| `CommandParameter` | `Object` | Parameter passed to `Command`. |
+
+### Key properties (`ToggleSplitButton`)
+
+| Property | Type | Description |
+|---|---|---|
+| `IsChecked` | `Boolean` | Whether the primary area is in the checked/toggled state. |
+
+### Events
+
+| Control | Event | Description |
+|---|---|---|
+| `SplitButton` | `Click` | Fires when the primary area is clicked. |
+| `ToggleSplitButton` | `IsCheckedChanged` | Fires when `IsChecked` changes. |
+
+---
+
+## DropDownButton
+
+`DropDownButton` extends the standard `Button` with a built-in chevron that signals to the user that clicking opens a flyout. Attach a `MenuFlyout` or other `FlyoutBase` to the `Flyout` property.
+
+```xml
+<muxc:DropDownButton Content="Sort by">
+    <muxc:DropDownButton.Flyout>
+        <MenuFlyout Placement="Bottom">
+            <MenuFlyoutItem Text="Name" />
+            <MenuFlyoutItem Text="Date modified" />
+            <MenuFlyoutItem Text="Size" />
+        </MenuFlyout>
+    </muxc:DropDownButton.Flyout>
+</muxc:DropDownButton>
+```
+
+<Note>
+`DropDownButton` inherits all properties and events from the platform `Button` control, including `Command`, `Content`, and `Click`.
+</Note>
+
+---
+
+## ColorPicker
+
+`ColorPicker` is a full-featured color selection control. It includes a color spectrum, hue/saturation/value sliders, an optional alpha slider, and hex and channel text inputs. The layout can be oriented vertically or horizontally.
+
+<Tabs>
+  <Tab title="Basic">
+```xml
+<muxc:ColorPicker
+    Color="{x:Bind SelectedColor, Mode=TwoWay}"
+    ColorChanged="ColorPicker_ColorChanged" />
+```
+  </Tab>
+  <Tab title="Alpha-enabled">
+```xml
+<muxc:ColorPicker
+    IsAlphaEnabled="True"
+    IsAlphaSliderVisible="True"
+    IsAlphaTextInputVisible="True"
+    ColorChanged="ColorPicker_ColorChanged" />
+```
+  </Tab>
+  <Tab title="Minimal">
+```xml
+<muxc:ColorPicker
+    IsColorSpectrumVisible="True"
+    IsColorPreviewVisible="True"
+    IsColorSliderVisible="False"
+    IsColorChannelTextInputVisible="False"
+    IsHexInputVisible="False"
+    ColorSpectrumShape="Ring" />
+```
+  </Tab>
+</Tabs>
+
+### Key properties
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `Color` | `Windows.UI.Color` | White | The currently selected color. |
+| `PreviousColor` | `IReference<Color>` | — | Optional previous color shown as a comparison swatch. |
+| `IsAlphaEnabled` | `Boolean` | `false` | Enable alpha channel support throughout the control. |
+| `IsColorSpectrumVisible` | `Boolean` | `true` | Show the 2D color spectrum picker. |
+| `IsColorPreviewVisible` | `Boolean` | `true` | Show the preview swatch. |
+| `IsColorSliderVisible` | `Boolean` | `true` | Show the color (value) slider. |
+| `IsAlphaSliderVisible` | `Boolean` | `true` | Show the alpha slider (when alpha is enabled). |
+| `IsHexInputVisible` | `Boolean` | `true` | Show the hex color input field. |
+| `ColorSpectrumShape` | `ColorSpectrumShape` | `Box` | `Box` or `Ring` spectrum shape. |
+| `ColorSpectrumComponents` | `ColorSpectrumComponents` | `HueSaturation` | Axes displayed in the spectrum. |
+| `Orientation` | `Orientation` | `Vertical` | `Vertical` (sliders below) or `Horizontal` (sliders beside). |
+
+### Events
+
+| Event | Description |
+|---|---|
+| `ColorChanged` | Fires whenever the selected color changes. |
+
+---
+
+## SwipeControl
+
+`SwipeControl` wraps any content and reveals action items when the user swipes with touch or a precision touchpad. Actions can be placed on any of the four sides. `SwipeMode` controls whether items are revealed (standard) or execute on release.
+
+```xml
+<muxc:SwipeControl>
+    <muxc:SwipeControl.RightItems>
+        <muxc:SwipeItems Mode="Execute">
+            <muxc:SwipeItem
+                Text="Delete"
+                Background="Red"
+                BehaviorOnInvoked="Close"
+                Invoked="DeleteItem_Invoked">
+                <muxc:SwipeItem.IconSource>
+                    <muxc:SymbolIconSource Symbol="Delete" />
+                </muxc:SwipeItem.IconSource>
+            </muxc:SwipeItem>
+        </muxc:SwipeItems>
+    </muxc:SwipeControl.RightItems>
+    <muxc:SwipeControl.LeftItems>
+        <muxc:SwipeItems Mode="Reveal">
+            <muxc:SwipeItem
+                Text="Pin"
+                Background="SteelBlue"
+                Invoked="PinItem_Invoked">
+                <muxc:SwipeItem.IconSource>
+                    <muxc:SymbolIconSource Symbol="Pin" />
+                </muxc:SwipeItem.IconSource>
+            </muxc:SwipeItem>
+        </muxc:SwipeItems>
+    </muxc:SwipeControl.LeftItems>
+
+    <!-- Main item content -->
+    <Grid Height="60" Padding="12">
+        <TextBlock Text="Swipe me left or right" VerticalAlignment="Center" />
+    </Grid>
+</muxc:SwipeControl>
+```
+
+### Key properties (`SwipeControl`)
+
+| Property | Type | Description |
+|---|---|---|
+| `LeftItems` | `SwipeItems` | Actions revealed by a left-to-right swipe. |
+| `RightItems` | `SwipeItems` | Actions revealed by a right-to-left swipe. |
+| `TopItems` | `SwipeItems` | Actions revealed by a top-to-bottom swipe. |
+| `BottomItems` | `SwipeItems` | Actions revealed by a bottom-to-top swipe. |
+
+### Key properties (`SwipeItems`)
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `Mode` | `SwipeMode` | `Reveal` | `Reveal` shows the item persistently; `Execute` invokes it on release. |
+
+### Key properties (`SwipeItem`)
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `Text` | `String` | — | Label shown on the action item. |
+| `IconSource` | `IconSource` | — | Icon shown on the action item. |
+| `Background` | `Brush` | — | Background color of the action item. |
+| `BehaviorOnInvoked` | `SwipeBehaviorOnInvoked` | `Auto` | `Auto`, `Close`, or `RemainOpen` after invocation. |
+| `Command` | `ICommand` | — | Command bound to the action. |

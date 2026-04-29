@@ -1,0 +1,224 @@
+---
+title: "Layout Controls in WinUI: Adaptive Panels and Containers"
+description: "Learn how to use TwoPaneView, SplitView, Expander, WrapPanel, and LayoutPanel to build adaptive, structured layouts in WinUI applications."
+---
+
+WinUI provides several layout-focused controls that go beyond the standard `Grid` and `StackPanel`. These controls handle common structural patterns — side-by-side panes, collapsible sections, and wrapping children — so you don't have to build them from scratch.
+
+## TwoPaneView
+
+`TwoPaneView` arranges content into two panes that respond to the available display area. On wide displays both panes appear side by side. On tall or narrow displays the control falls back to showing a single pane, with `PanePriority` determining which one.
+
+<Tabs>
+  <Tab title="Basic usage">
+```xml
+<muxc:TwoPaneView
+    PanePriority="Pane1"
+    WideModeConfiguration="LeftRight"
+    MinWideModeWidth="640">
+    <muxc:TwoPaneView.Pane1>
+        <StackPanel>
+            <TextBlock Text="Primary content" />
+        </StackPanel>
+    </muxc:TwoPaneView.Pane1>
+    <muxc:TwoPaneView.Pane2>
+        <StackPanel>
+            <TextBlock Text="Secondary content" />
+        </StackPanel>
+    </muxc:TwoPaneView.Pane2>
+</muxc:TwoPaneView>
+```
+  </Tab>
+  <Tab title="Tall mode">
+```xml
+<muxc:TwoPaneView
+    PanePriority="Pane1"
+    TallModeConfiguration="TopBottom"
+    MinTallModeHeight="400">
+    <muxc:TwoPaneView.Pane1>
+        <Image Source="hero.png" />
+    </muxc:TwoPaneView.Pane1>
+    <muxc:TwoPaneView.Pane2>
+        <ScrollViewer>
+            <TextBlock Text="Details..." TextWrapping="Wrap" />
+        </ScrollViewer>
+    </muxc:TwoPaneView.Pane2>
+</muxc:TwoPaneView>
+```
+  </Tab>
+</Tabs>
+
+### Key properties
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `PanePriority` | `TwoPaneViewPriority` | `Pane1` | Which pane to show when only one fits. |
+| `Mode` | `TwoPaneViewMode` | `SinglePane` | Read-only. Current layout mode: `SinglePane`, `Wide`, or `Tall`. |
+| `WideModeConfiguration` | `TwoPaneViewWideModeConfiguration` | `LeftRight` | Pane order in wide mode: `LeftRight` or `RightLeft`. |
+| `TallModeConfiguration` | `TwoPaneViewTallModeConfiguration` | `TopBottom` | Pane order in tall mode: `TopBottom` or `BottomTop`. |
+| `MinWideModeWidth` | `Double` | — | Minimum width to activate wide mode. |
+| `MinTallModeHeight` | `Double` | — | Minimum height to activate tall mode. |
+| `Pane1Length` / `Pane2Length` | `GridLength` | — | Size of each pane; supports star, auto, and fixed values. |
+
+### Events
+
+| Event | Description |
+|---|---|
+| `ModeChanged` | Fires when the display `Mode` transitions between `SinglePane`, `Wide`, and `Tall`. |
+
+---
+
+## SplitView
+
+`SplitView` divides the screen into a pane on the left (or right) and a content area. It is the building block for custom navigation drawers. The pane can be shown inline, overlaid on top of content, or compacted to show only icons.
+
+```xml
+<muxc:SplitView
+    x:Name="MainSplitView"
+    DisplayMode="Inline"
+    IsPaneOpen="True"
+    OpenPaneLength="240"
+    CompactPaneLength="48">
+    <muxc:SplitView.Pane>
+        <StackPanel>
+            <Button Content="Home" />
+            <Button Content="Settings" />
+        </StackPanel>
+    </muxc:SplitView.Pane>
+    <!-- Main content -->
+    <Frame x:Name="ContentFrame" />
+</muxc:SplitView>
+```
+
+<Note>
+`SplitView` is a lower-level building block. If you need a fully featured navigation shell with back navigation, settings integration, and adaptive breakpoints, use `NavigationView` instead.
+</Note>
+
+### Key properties
+
+| Property | Type | Description |
+|---|---|---|
+| `IsPaneOpen` | `Boolean` | Whether the pane is currently open. |
+| `DisplayMode` | `SplitViewDisplayMode` | `Overlay`, `Inline`, `CompactOverlay`, or `CompactInline`. |
+| `OpenPaneLength` | `Double` | Width of the pane when fully open. |
+| `CompactPaneLength` | `Double` | Width of the pane when in a compact display mode. |
+| `PanePlacement` | `SplitViewPanePlacement` | `Left` (default) or `Right`. |
+
+---
+
+## Expander
+
+`Expander` wraps content in a collapsible container. A header is always visible; clicking it toggles the body content in and out of view. The direction the content appears can be set to `Down` (default) or `Up`.
+
+<Tabs>
+  <Tab title="Basic">
+```xml
+<muxc:Expander
+    Header="Advanced options"
+    IsExpanded="False">
+    <StackPanel Spacing="8">
+        <CheckBox Content="Enable telemetry" />
+        <CheckBox Content="Use dark mode" />
+    </StackPanel>
+</muxc:Expander>
+```
+  </Tab>
+  <Tab title="Rich header">
+```xml
+<muxc:Expander IsExpanded="True">
+    <muxc:Expander.Header>
+        <StackPanel Margin="0,14,0,16">
+            <TextBlock Text="Profile settings" />
+            <TextBlock
+                Text="Manage your display name and avatar"
+                Style="{StaticResource CaptionTextBlockStyle}"
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+        </StackPanel>
+    </muxc:Expander.Header>
+    <TextBox PlaceholderText="Display name" />
+</muxc:Expander>
+```
+  </Tab>
+  <Tab title="Upward direction">
+```xml
+<muxc:Expander
+    Header="More details"
+    ExpandDirection="Up"
+    IsExpanded="False">
+    <TextBlock Text="This content appears above the header." />
+</muxc:Expander>
+```
+  </Tab>
+</Tabs>
+
+### Key properties
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `Header` | `Object` | — | Content shown in the always-visible header area. |
+| `HeaderTemplate` | `DataTemplate` | — | Optional template for the `Header` value. |
+| `IsExpanded` | `Boolean` | `false` | Whether the body content is visible. |
+| `ExpandDirection` | `ExpandDirection` | `Down` | `Down` expands below the header; `Up` expands above it. |
+
+### Events
+
+| Event | Description |
+|---|---|
+| `Expanding` | Fires when the control is about to expand. |
+| `Collapsed` | Fires when the control has finished collapsing. |
+
+---
+
+## WrapPanel
+
+`WrapPanel` lays out children in a row and wraps to the next line when the available width is exhausted. It is useful for tag clouds, chip groups, and any scenario where items should flow naturally.
+
+<Warning>
+`WrapPanel` is currently in preview (`MUX_PREVIEW`). Its API surface may change before general availability.
+</Warning>
+
+```xml
+<muxc:WrapPanel
+    Orientation="Horizontal"
+    HorizontalSpacing="8"
+    VerticalSpacing="8">
+    <Button Content="Tag one" />
+    <Button Content="Tag two" />
+    <Button Content="Longer tag three" />
+    <Button Content="Four" />
+    <Button Content="Five" />
+</muxc:WrapPanel>
+```
+
+### Key properties
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `Orientation` | `Orientation` | `Horizontal` | Direction of item flow before wrapping. |
+| `HorizontalSpacing` | `Double` | `0` | Gap between items on the horizontal axis. |
+| `VerticalSpacing` | `Double` | `0` | Gap between rows (or columns in vertical mode). |
+| `StretchChild` | `StretchChild` | `None` | When set to `Last`, the final child stretches to fill remaining space. |
+| `Padding` | `Thickness` | — | Inner padding applied around all children. |
+
+---
+
+## LayoutPanel
+
+`LayoutPanel` is the base panel class used internally by controls like `ItemsRepeater`. It delegates measurement and arrangement to a pluggable `Layout` object (`StackLayout`, `UniformGridLayout`, `FlowLayout`, etc.).
+
+```xml
+<muxc:LayoutPanel>
+    <muxc:LayoutPanel.Layout>
+        <muxc:UniformGridLayout MinItemWidth="120" MinItemHeight="120" />
+    </muxc:LayoutPanel.Layout>
+
+    <Border Background="SteelBlue" />
+    <Border Background="Teal" />
+    <Border Background="CornflowerBlue" />
+    <Border Background="DodgerBlue" />
+</muxc:LayoutPanel>
+```
+
+<Tip>
+For large or virtual data sets, use `ItemsRepeater` instead of `LayoutPanel` directly. `ItemsRepeater` wraps `LayoutPanel` with element virtualization and data binding support.
+</Tip>

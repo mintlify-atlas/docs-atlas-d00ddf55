@@ -1,0 +1,261 @@
+---
+title: "WinUI Performance Best Practices and Optimization"
+description: "Optimize WinUI apps with ItemsRepeater virtualization, x:Bind, deferred loading, ScrollView, composition animations, and Visual Studio profiling tools."
+---
+
+WinUI controls are optimized for common scenarios by default, but the choices you make in layout, data binding, and loading strategy have a significant impact on responsiveness and memory use. This guide covers the patterns that matter most.
+
+## ItemsRepeater vs ListView for large data sets
+
+`ListView` and `GridView` are full-featured controls that include built-in scrolling, selection, drag-and-drop, and virtualization. That feature set comes with overhead. When you need high-density data display without selection or drag-and-drop, `ItemsRepeater` gives you virtualization with less overhead because it owns no scrolling or selection logic itself.
+
+<Tabs>
+  <Tab title="ItemsRepeater (recommended for large lists)">
+    ```xml
+    <!-- ItemsRepeater requires an external ScrollView for scrolling -->
+    <ScrollView>
+        <ItemsRepeater ItemsSource="{x:Bind ViewModel.Items}"
+                       ItemTemplate="{StaticResource MyItemTemplate}">
+            <ItemsRepeater.Layout>
+                <StackLayout Orientation="Vertical" Spacing="4" />
+            </ItemsRepeater.Layout>
+        </ItemsRepeater>
+    </ScrollView>
+    ```
+  </Tab>
+  <Tab title="ListView (built-in scrolling and selection)">
+    ```xml
+    <!-- ListView includes scrolling, selection, and drag-drop -->
+    <ListView ItemsSource="{x:Bind ViewModel.Items}"
+              ItemTemplate="{StaticResource MyItemTemplate}"
+              SelectionMode="Single" />
+    ```
+  </Tab>
+</Tabs>
+
+<Note>
+`ItemsRepeater` has no built-in scrolling. Wrap it in a `ScrollView` (WinUI's modern scroller) or `ScrollViewer` to make its content scrollable.
+</Note>
+
+`ItemsRepeater` virtualizes by default when used with a `VirtualizingLayout` such as `StackLayout`, `UniformGridLayout`, or `LinedFlowLayout`. Items outside the visible viewport plus the cache buffer are recycled automatically.
+
+### Layout options for ItemsRepeater
+
+| Layout | Use when |
+|---|---|
+| `StackLayout` | Single-column or single-row list |
+| `UniformGridLayout` | Grid where all items are the same size |
+| `LinedFlowLayout` | Photo-wall or news-feed style with variable-width items on each row |
+| `FlowLayout` (preview) | Custom wrapping layout |
+
+## Virtualization with RecyclingElementFactory
+
+When items in an `ItemsRepeater` require different templates based on data type, use `RecyclingElementFactory` with a `RecyclePool` to avoid recreating elements on every scroll pass:
+
+```xml
+<ItemsRepeater ItemsSource="{x:Bind ViewModel.FeedItems}">
+    <ItemsRepeater.ItemTemplate>
+        <local:FeedItemElementFactory />
+    </ItemsRepeater.ItemTemplate>
+    <ItemsRepeater.Layout>
+        <StackLayout Spacing="8" />
+    </ItemsRepeater.Layout>
+</ItemsRepeater>
+```
+
+```csharp
+// FeedItemElementFactory.cs
+public class FeedItemElementFactory : RecyclingElementFactory
+{
+    protected override string OnSelectTemplateKeyCore(object dataContext, UIElement owner)
+    {
+        return dataContext switch
+        {
+            ArticleItem => "ArticleTemplate",
+            VideoItem   => "VideoTemplate",
+            _           => "DefaultTemplate"
+        };
+    }
+}
+```
+
+```xml
+<!-- Define templates with matching keys -->
+<local:FeedItemElementFactory>
+    <local:FeedItemElementFactory.Templates>
+        <DataTemplate x:Key="ArticleTemplate">
+            <!-- article UI -->
+        </DataTemplate>
+        <DataTemplate x:Key="VideoTemplate">
+            <!-- video UI -->
+        </DataTemplate>
+    </local:FeedItemElementFactory.Templates>
+</local:FeedItemElementFactory>
+```
+
+`RecyclingElementFactory` maintains a `RecyclePool` per template key. When an item scrolls out of view, its element returns to the pool. When a new item of the same type scrolls in, the pooled element is reused instead of inflated from the template.
+
+## x:Bind instead of Binding
+
+`{x:Bind}` generates strongly-typed code at compile time, resolving property paths against the page's code-behind class rather than using reflection at runtime. Prefer it over `{Binding}` for all new code.
+
+<CodeGroup>
+
+```xml Preferred: x:Bind (compile-time)
+<!-- Resolved at compile time, null-safe, no reflection overhead -->
+<TextBlock Text="{x:Bind ViewModel.Title, Mode=OneWay}" />
+<Image Source="{x:Bind ViewModel.ThumbnailUri, Mode=OneWay}" />
+<Button Command="{x:Bind ViewModel.SaveCommand}" />
+```
+
+```xml Avoid: Binding (runtime reflection)
+<!-- Resolved via reflection at runtime, no compile-time errors -->
+<TextBlock Text="{Binding Title, Mode=OneWay}" />
+<Image Source="{Binding ThumbnailUri, Mode=OneWay}" />
+<Button Command="{Binding SaveCommand}" />
+```
+
+</CodeGroup>
+
+<Tip>
+Use `Mode=OneTime` for data that never changes after the initial load — for example, a static label or an item in a non-editable list. `OneTime` bindings are evaluated once and then release the binding subscription.
+</Tip>
+
+### Function binding with x:Bind
+
+`{x:Bind}` supports calling methods and passing arguments directly, which eliminates the need for converter objects in many cases:
+
+```xml
+<TextBlock Text="{x:Bind ViewModel.FormatDate(ViewModel.CreatedAt), Mode=OneWay}" />
+<Border Visibility="{x:Bind local:Converters.BoolToVisibility(ViewModel.IsLoading), Mode=OneWay}" />
+```
+
+## Deferred loading with x:Load and x:DeferLoadStrategy
+
+Use `x:Load="False"` to completely exclude UI elements from the visual tree until they are needed. Unlike `Visibility="Collapsed"`, an element with `x:Load="False"` is not instantiated at all, saving both memory and layout time:
+
+```xml
+<!-- This panel is not created until IsErrorVisible becomes true -->
+<StackPanel x:Name="ErrorPanel"
+            x:Load="{x:Bind ViewModel.IsErrorVisible, Mode=OneWay}"
+            Orientation="Vertical"
+            Padding="16">
+    <TextBlock Text="An error occurred." />
+    <Button Content="Retry" Command="{x:Bind ViewModel.RetryCommand}" />
+</StackPanel>
+```
+
+`x:DeferLoadStrategy="Lazy"` is the older alternative for UWP and WinUI 2. Prefer `x:Load` in WinUI 3 projects.
+
+<Warning>
+Elements with `x:Load="False"` are not in the visual tree, so you cannot reference them in XAML bindings or storyboards until they have been realized. Realize them first by setting the bound property to `true`, or by calling `FindName("ErrorPanel")` from code.
+</Warning>
+
+## Avoid heavy work in control templates
+
+Control templates run during layout for every item in a virtualized list. Keep templates lean:
+
+- Avoid deeply nested panels. Prefer `Grid` over stacked `StackPanel` elements.
+- Do not use `Binding` to `StaticResource` inside list item templates — resolve the resource in the data model or converter instead.
+- Move expensive operations (image loading, network calls) into the view model and expose ready-to-bind properties.
+- Use `BitmapImage` with `DecodePixelWidth` or `DecodePixelHeight` to decode images at display resolution rather than full resolution:
+
+```xml
+<Image>
+    <Image.Source>
+        <BitmapImage UriSource="{x:Bind ThumbnailUri, Mode=OneWay}"
+                     DecodePixelWidth="80"
+                     DecodePixelType="Logical" />
+    </Image.Source>
+</Image>
+```
+
+## Animation performance and composition APIs
+
+Animations that run on the composition thread — rather than the UI thread — are not blocked by UI thread work. WinUI's built-in `ConnectedAnimation`, `ImplicitAnimationCollection`, and `ThemeTransition` classes all run on the composition thread.
+
+For custom animations, use `Windows.UI.Composition` (or `Microsoft.UI.Composition` in WinUI 3) APIs to drive animations directly on the visual layer:
+
+```csharp
+var compositor = ElementCompositionPreview.GetElementVisual(MyElement).Compositor;
+var animation = compositor.CreateScalarKeyFrameAnimation();
+animation.InsertKeyFrame(0f, 0f);
+animation.InsertKeyFrame(1f, 1f);
+animation.Duration = TimeSpan.FromMilliseconds(300);
+
+var visual = ElementCompositionPreview.GetElementVisual(MyElement);
+visual.StartAnimation("Opacity", animation);
+```
+
+<Tip>
+Avoid `DoubleAnimation` in `Storyboard` for performance-critical scenarios. These animate on the UI thread. Composition animations run on a dedicated render thread and are not affected by UI thread jank.
+</Tip>
+
+## ScrollView and ScrollPresenter for custom scrolling
+
+WinUI includes two scroller types:
+
+- **`ScrollViewer`** — the classic UWP scroller, available in `Microsoft.UI.Xaml.Controls` for compatibility.
+- **`ScrollView`** — the modern WinUI scroller built on `ScrollPresenter`. Prefer this for new code.
+
+`ScrollView` exposes `ExpressionAnimationSources` as a `CompositionPropertySet`, which lets you tie composition animations to scroll position without any UI-thread involvement:
+
+```csharp
+var scrollView = MyScrollView;
+var expressionSources = scrollView.ExpressionAnimationSources;
+
+// Bind a parallax offset to the scroll position using a composition expression
+var visual = ElementCompositionPreview.GetElementVisual(ParallaxImage);
+var parallaxExpression = compositor.CreateExpressionAnimation(
+    "scroll.Translation.Y * -0.3");
+parallaxExpression.SetReferenceParameter("scroll", expressionSources);
+visual.StartAnimation("Offset.Y", parallaxExpression);
+```
+
+`ScrollView` also supports programmatic scrolling with optional animation:
+
+```csharp
+// Scroll to position with default animation
+MyScrollView.ScrollTo(0, 500);
+
+// Scroll by a delta with custom options
+MyScrollView.ScrollBy(0, 200, new ScrollingScrollOptions(
+    ScrollingAnimationMode.Enabled,
+    ScrollingSnapPointsMode.Ignore));
+```
+
+## Profiling with Visual Studio diagnostic tools
+
+Use the Visual Studio **Performance Profiler** (**Alt+F2**) to identify hot paths in your app. The most relevant tools for WinUI apps are:
+
+<Steps>
+  <Step title="CPU Usage">
+    Identifies which methods are consuming the most CPU time. Look for binding resolution, layout passes, and template inflation that occurs during scrolling.
+  </Step>
+  <Step title="XAML Hot Reload + Live Visual Tree">
+    Use the Live Visual Tree in debug mode to inspect the visual tree depth and element count. Deep trees and element counts above a few hundred in a single viewport frame are candidates for simplification.
+  </Step>
+  <Step title="Frame Rate Counter">
+    Enable the frame rate counter overlay in your app by setting `Windows.UI.Xaml.DebugSettings.EnableFrameRateCounter = true` during development. A sustained rate below 60 fps during interactions indicates a performance issue.
+  </Step>
+  <Step title="Memory Usage">
+    Check for retained element references when navigating between pages. Use the Memory Usage profiler snapshot comparison to confirm that page controls are collected after navigation.
+  </Step>
+</Steps>
+
+## Summary
+
+<CardGroup cols={2}>
+  <Card title="ItemsRepeater" icon="list">
+    Use for large, read-only lists. Pair with `ScrollView` and a `VirtualizingLayout`. Use `RecyclingElementFactory` for multiple item templates.
+  </Card>
+  <Card title="x:Bind" icon="bolt">
+    Replace `{Binding}` with `{x:Bind}` for compile-time binding. Use `Mode=OneTime` for static data.
+  </Card>
+  <Card title="x:Load" icon="clock">
+    Defer non-critical UI with `x:Load="False"` to reduce startup cost and memory use.
+  </Card>
+  <Card title="Composition animations" icon="wand-magic-sparkles">
+    Drive scroll-linked and interactive animations on the composition thread to avoid UI-thread jank.
+  </Card>
+</CardGroup>

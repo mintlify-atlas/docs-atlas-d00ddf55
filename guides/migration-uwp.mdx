@@ -1,0 +1,289 @@
+---
+title: "Migrate from UWP (WinUI 2) to Windows App SDK (WinUI 3)"
+description: "Move a UWP app to WinUI 3 and the Windows App SDK: namespace changes, Window model, XamlRoot requirements, replaced APIs, and common migration pitfalls."
+---
+
+WinUI 3 ships as part of the [Windows App SDK](https://learn.microsoft.com/windows/apps/windows-app-sdk/), separate from the operating system. Migrating a UWP app that uses WinUI 2 to a Windows App SDK desktop app gives you access to the latest WinUI controls and patterns, while decoupling your app's update cadence from Windows releases.
+
+<Note>
+Microsoft publishes a comprehensive migration guide on Microsoft Learn: [Migrate from UWP to the Windows App SDK](https://learn.microsoft.com/windows/apps/windows-app-sdk/migrate-to-windows-app-sdk/migrate-to-windows-app-sdk-ovw). Use this page as a practical reference for the most common changes, then consult the Microsoft Learn guide for complete API mapping tables.
+</Note>
+
+## Key differences between WinUI 2 (UWP) and WinUI 3
+
+| Area | WinUI 2 / UWP | WinUI 3 / Windows App SDK |
+|---|---|---|
+| Deployment | Bundled with Windows | Ships with the app via NuGet |
+| Runtime | `Windows.UI.Xaml` namespace | `Microsoft.UI.Xaml` namespace |
+| Process model | App container (sandbox) | Full-trust desktop process |
+| Window | `Windows.UI.Xaml.Window` | `Microsoft.UI.Xaml.Window` + `AppWindow` |
+| Entry point | `App.xaml.cs` with `OnLaunched(LaunchActivatedEventArgs)` | `App.xaml.cs` with `Microsoft.UI.Xaml.LaunchActivatedEventArgs` |
+| Title bar | Automatic system title bar | Opt-in via `AppWindow.TitleBar` or WinUI `TitleBar` control |
+| Target minimum OS | Windows 10 (various) | Windows 10 1809 (Build 17763) |
+
+## Namespace changes
+
+Every type in `Windows.UI.Xaml` has a counterpart in `Microsoft.UI.Xaml`. The rename is mechanical: replace the namespace prefix throughout your project.
+
+<CodeGroup>
+
+```csharp WinUI 2 / UWP
+using Windows.UI.Xaml;
+using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml.Media;
+using Windows.UI.Xaml.Navigation;
+using Windows.UI.Composition;
+using Windows.UI.ViewManagement;
+```
+
+```csharp WinUI 3 / Windows App SDK
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Navigation;
+using Microsoft.UI.Composition;
+using Microsoft.UI.Windowing; // replaces ViewManagement
+```
+
+</CodeGroup>
+
+In XAML files, update the `xmlns` declarations:
+
+<CodeGroup>
+
+```xml WinUI 2 / UWP
+xmlns:controls="using:Windows.UI.Xaml.Controls"
+```
+
+```xml WinUI 3 / Windows App SDK
+xmlns:controls="using:Microsoft.UI.Xaml.Controls"
+```
+
+</CodeGroup>
+
+<Tip>
+Use Visual Studio's **Find and Replace** (Ctrl+H) with **Match case** enabled to rename namespaces across the solution. Replace `Windows.UI.Xaml` → `Microsoft.UI.Xaml` and `Windows.UI.Composition` → `Microsoft.UI.Composition` as a starting point.
+</Tip>
+
+## Window model changes
+
+UWP's `CoreWindow` model is replaced by `AppWindow` in the Windows App SDK. The `Window` class in WinUI 3 wraps an `AppWindow` that you can access and configure directly.
+
+### Accessing AppWindow
+
+```csharp
+// WinUI 3: get the AppWindow from the current Window
+var appWindow = App.MainWindow.AppWindow;
+```
+
+### Title bar customization
+
+```csharp
+// Show the title bar's customization area and extend content into it
+var titleBar = appWindow.TitleBar;
+titleBar.ExtendsContentIntoTitleBar = true;
+titleBar.ButtonBackgroundColor = Colors.Transparent;
+titleBar.ButtonInactiveBackgroundColor = Colors.Transparent;
+```
+
+Alternatively, use the `TitleBar` control introduced in WinUI 3 for a higher-level API:
+
+```xml
+<Window>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <TitleBar Title="My App"
+                  Subtitle="Document name"
+                  Grid.Row="0" />
+
+        <Frame x:Name="ContentFrame" Grid.Row="1" />
+    </Grid>
+</Window>
+```
+
+### Window creation and activation
+
+In WinUI 3, you create and activate windows explicitly:
+
+```csharp
+// App.xaml.cs
+protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
+{
+    m_window = new MainWindow();
+    m_window.Activate();
+}
+
+private Window m_window;
+```
+
+<Warning>
+WinUI 3 does not have a static `Window.Current` accessor. Store a reference to your `Window` instance (for example, on `App`) and pass it where needed, or use `WindowId` to look up windows via `Microsoft.UI.Windowing.AppWindow.GetFromWindowId`.
+</Warning>
+
+## Package manifest differences
+
+WinUI 3 apps packaged with MSIX use the same `Package.appxmanifest` format as UWP, but several extension points change:
+
+- Replace `<uap:VisualElements>` activation with `<desktop:Extension Category="windows.startupTask">` where required.
+- The `EntryPoint` for packaged desktop apps is typically `$targetentrypoint$` rather than the UWP-style `App.App`.
+- Remove `<uap:Capability Name="runFullTrust" />` — desktop apps run as full trust by default.
+
+For unpackaged deployment (no MSIX), no manifest is required, but you must bootstrap the Windows App SDK runtime in `main` or `WinMain`:
+
+```csharp
+// Program.cs for unpackaged WinUI 3 app
+using Microsoft.Windows.AppLifecycle;
+
+[STAThread]
+static void Main(string[] args)
+{
+    WinRT.ComWrappersSupport.InitializeComWrappers();
+    Microsoft.UI.Xaml.Application.Start((p) =>
+    {
+        var context = new DispatcherQueueSynchronizationContext(
+            Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread());
+        SynchronizationContext.SetSynchronizationContext(context);
+        _ = new App();
+    });
+}
+```
+
+## Replaced APIs and their WinUI 3 equivalents
+
+### Dialogs and XamlRoot
+
+`ContentDialog` in WinUI 3 requires `XamlRoot` to be set before calling `ShowAsync`. In UWP this was not necessary.
+
+<CodeGroup>
+
+```csharp WinUI 2 / UWP
+var dialog = new ContentDialog
+{
+    Title = "Delete?",
+    PrimaryButtonText = "Delete",
+    CloseButtonText = "Cancel"
+};
+await dialog.ShowAsync();
+```
+
+```csharp WinUI 3 / Windows App SDK
+var dialog = new ContentDialog
+{
+    Title = "Delete?",
+    PrimaryButtonText = "Delete",
+    CloseButtonText = "Cancel",
+    XamlRoot = this.XamlRoot  // required in WinUI 3
+};
+await dialog.ShowAsync();
+```
+
+</CodeGroup>
+
+### ApplicationView → AppWindow
+
+```csharp
+// UWP
+var view = ApplicationView.GetForCurrentView();
+view.TryResizeView(new Size(800, 600));
+view.Title = "My Window";
+
+// WinUI 3
+var appWindow = App.MainWindow.AppWindow;
+appWindow.Resize(new SizeInt32 { Width = 800, Height = 600 });
+appWindow.Title = "My Window";
+```
+
+### SystemNavigationManager → BackRequested on AppWindow
+
+```csharp
+// UWP
+SystemNavigationManager.GetForCurrentView().BackRequested += OnBackRequested;
+
+// WinUI 3 — handle the back button in your own navigation logic
+// There is no direct equivalent; handle back navigation manually
+// via NavigationView.BackRequested or a custom back button.
+```
+
+### DisplayInformation → DisplayArea
+
+```csharp
+// UWP
+var displayInfo = DisplayInformation.GetForCurrentView();
+double scaleFactor = displayInfo.RawPixelsPerViewPixel;
+
+// WinUI 3
+var displayArea = DisplayArea.GetFromWindowId(
+    App.MainWindow.AppWindow.Id,
+    DisplayAreaFallback.Nearest);
+// Use displayArea.OuterBounds or query DPI via Win32 interop
+```
+
+### MessageDialog → ContentDialog
+
+`MessageDialog` (from `Windows.UI.Popups`) is not recommended for WinUI 3 desktop apps. Use `ContentDialog` instead.
+
+## Controls that changed behavior
+
+| Control | Change |
+|---|---|
+| `NavigationView` | No behavior change; works identically in WinUI 3. |
+| `ContentDialog` | Requires `XamlRoot` property to be set. |
+| `Popup` | Requires `XamlRoot` to be set for non-light-dismiss popups. |
+| `MenuFlyout` | Requires `XamlRoot` in some hosting scenarios. |
+| `InkCanvas` | Supported on desktop in WinUI 3 via `InkCanvas` in `Microsoft.UI.Xaml.Controls`. |
+| `MediaPlayerElement` | Available in WinUI 3; requires the `Windows.Media.Playback` namespace (unchanged). |
+
+## Common migration pitfalls
+
+<AccordionGroup>
+  <Accordion title="Window.Current is null">
+    WinUI 3 does not have a static `Window.Current`. Store your `Window` reference on the `App` class and expose it as a static property (`App.MainWindow`). Pass `XamlRoot` from within page or control code via `this.XamlRoot`.
+  </Accordion>
+  <Accordion title="XamlRoot not set on dialogs and popups">
+    Every `ContentDialog`, `Popup`, and `Flyout` must have its `XamlRoot` set to the `XamlRoot` of the hosting `Page` or `Window`. The most common pattern is `dialog.XamlRoot = this.XamlRoot` in a `Page` method.
+  </Accordion>
+  <Accordion title="Threading: DispatcherQueue vs CoreDispatcher">
+    Replace `CoreDispatcher.RunAsync` with `DispatcherQueue.TryEnqueue`:
+
+    ```csharp
+    // UWP
+    await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => { /* UI update */ });
+
+    // WinUI 3
+    DispatcherQueue.TryEnqueue(() => { /* UI update */ });
+    ```
+  </Accordion>
+  <Accordion title="Package identity for unpackaged apps">
+    Some Windows Runtime APIs require package identity and will throw `PackageIdentityNotPresentException` in unpackaged apps. Check the [Windows Runtime APIs not supported in desktop apps](https://learn.microsoft.com/windows/apps/desktop/modernize/desktop-to-uwp-supported-api) list before migrating API calls.
+  </Accordion>
+  <Accordion title="StorageFile vs System.IO">
+    UWP apps often used `StorageFile` for file access due to sandboxing. WinUI 3 desktop apps run as full trust, so you can use `System.IO.File` directly. `StorageFile` still works but is not required for basic file operations.
+  </Accordion>
+</AccordionGroup>
+
+## Migration steps
+
+<Steps>
+  <Step title="Create a new WinUI 3 project">
+    In Visual Studio, create a new **Blank App, Packaged (WinUI 3 in Desktop)** project. Do not try to convert the UWP project in place — start fresh and migrate files incrementally.
+  </Step>
+  <Step title="Copy XAML pages and code-behind files">
+    Copy your `.xaml` and `.xaml.cs` files into the new project. Update `xmlns` declarations and namespace usages from `Windows.UI.Xaml` to `Microsoft.UI.Xaml`.
+  </Step>
+  <Step title="Fix XamlRoot references">
+    Search for `ShowAsync()` calls on `ContentDialog`, and add `XamlRoot = this.XamlRoot` to each dialog instance before showing it.
+  </Step>
+  <Step title="Replace window and view management APIs">
+    Replace `ApplicationView`, `CoreWindow`, and `SystemNavigationManager` usage with the `AppWindow` equivalents described in this guide.
+  </Step>
+  <Step title="Replace CoreDispatcher with DispatcherQueue">
+    Search for `Dispatcher.RunAsync` and replace with `DispatcherQueue.TryEnqueue`.
+  </Step>
+  <Step title="Test and fix remaining compile errors">
+    Build the solution. Most remaining errors will be namespace mismatches or removed APIs. Consult the [Microsoft Learn migration guide](https://learn.microsoft.com/windows/apps/windows-app-sdk/migrate-to-windows-app-sdk/migrate-to-windows-app-sdk-ovw) for a full API mapping reference.
+  </Step>
+</Steps>

@@ -1,0 +1,134 @@
+---
+title: "Compact resources: dense UI mode in WinUI 3"
+description: "Enable UseCompactResources on XamlControlsResources to reduce control height and spacing for data-heavy, productivity-focused Windows app layouts."
+---
+
+WinUI's compact resource mode reduces the height and padding of common controls, giving you more information density on screen without building custom control templates. It is designed for productivity apps, data grids, settings panels, and developer tools where users benefit from seeing more content without scrolling.
+
+## What compact resources change
+
+Compact mode overrides a set of sizing tokens defined in `Compact.xaml`. The changes are applied globally to all controls in scope:
+
+| Token | Default value | Compact value |
+|-------|--------------|---------------|
+| `ControlContentThemeFontSize` | 14 | 14 |
+| `TextControlThemeMinHeight` | (platform default) | 24 |
+| `TextControlThemePadding` | `10,5,6,6` | `2,2,6,1` |
+| `ListViewItemMinHeight` | 40 | 32 |
+| `TreeViewItemMinHeight` | 32 | 24 |
+| `ComboBoxMinHeight` | 32 | 24 |
+| `ComboBoxPadding` | `12,5,0,7` | `12,1,0,3` |
+| `NavigationViewItemOnLeftMinHeight` | 40 | 32 |
+| `TimePickerHostPadding` | (platform default) | `0,1,0,2` |
+| `DatePickerHostPadding` | (platform default) | `0,1,0,2` |
+
+## Controls affected by compact mode
+
+Compact mode reduces the rendered height of the following controls:
+
+- `TextBox`, `PasswordBox`, `RichEditBox`, `AutoSuggestBox`
+- `ComboBox`
+- `ListView` items
+- `TreeView` items
+- `NavigationView` items (left-nav mode)
+- `TimePicker`, `DatePicker`
+
+Controls not listed here — such as `Button`, `CheckBox`, and `ToggleSwitch` — are not directly resized by compact mode tokens, though layout-level spacing may still be affected by font size changes.
+
+## Enabling compact mode app-wide
+
+Set `UseCompactResources="True"` on the `XamlControlsResources` instance in `App.xaml`:
+
+```xml App.xaml
+<Application
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Application.Resources>
+        <XamlControlsResources
+            xmlns="using:Microsoft.UI.Xaml.Controls"
+            UseCompactResources="True" />
+    </Application.Resources>
+</Application>
+```
+
+This applies compact sizing to every WinUI control in the entire application.
+
+## Enabling compact mode for a specific subtree
+
+To apply compact sizing only to part of your UI, add `XamlControlsResources` to the `Resources` of any `FrameworkElement` in the subtree. Controls outside that subtree continue to use normal density:
+
+```xml
+<StackPanel>
+    <StackPanel.Resources>
+        <XamlControlsResources
+            xmlns="using:Microsoft.UI.Xaml.Controls"
+            UseCompactResources="True" />
+    </StackPanel.Resources>
+
+    <!-- These controls render at compact density -->
+    <TextBox Header="Compact TextBox" />
+    <ComboBox Header="Compact ComboBox">
+        <x:String>Option A</x:String>
+        <x:String>Option B</x:String>
+    </ComboBox>
+</StackPanel>
+
+<!-- This control uses normal density -->
+<TextBox Header="Normal TextBox" />
+```
+
+<Note>
+  When adding a second `XamlControlsResources` instance for a subtree, you may see style conflicts if the same resource keys are defined at both app level and subtree level. Test thoroughly to ensure the correct precedence applies.
+</Note>
+
+## Toggling compact mode at runtime
+
+`UseCompactResources` is a dependency property, so you can change it at runtime. Retrieve the `XamlControlsResources` instance from `Application.Current.Resources.MergedDictionaries` and toggle the property:
+
+```csharp
+using Microsoft.UI.Xaml.Controls;
+using System.Linq;
+
+// Toggle compact mode on the app-level XamlControlsResources
+var dict = Application.Current.Resources.MergedDictionaries
+    .OfType<XamlControlsResources>()
+    .FirstOrDefault();
+
+if (dict != null)
+{
+    dict.UseCompactResources = !dict.UseCompactResources;
+}
+```
+
+<Tip>
+  Persist the user's density preference in app settings so the choice is remembered across sessions. Apply it during `App.OnLaunched` before any windows are created.
+</Tip>
+
+## API reference
+
+`UseCompactResources` is defined on `XamlControlsResources` in the `Microsoft.UI.Xaml.Controls` namespace:
+
+```csharp
+// Namespace: Microsoft.UI.Xaml.Controls
+public class XamlControlsResources : ResourceDictionary
+{
+    public bool UseCompactResources { get; set; }
+    public static DependencyProperty UseCompactResourcesProperty { get; }
+
+    // Also exposes:
+    public static void EnsureRevealLights(UIElement element);
+}
+```
+
+The default value of `UseCompactResources` is `false`.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Resources and styles" icon="paintbrush" href="/theming/resources-styles">
+    Override individual control styles and reference Fluent color tokens.
+  </Card>
+  <Card title="Fluent Design" icon="sparkles" href="/theming/fluent-design">
+    Apply Mica or Acrylic system backdrops to your windows.
+  </Card>
+</CardGroup>

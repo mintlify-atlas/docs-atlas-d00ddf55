@@ -1,0 +1,117 @@
+---
+title: "Contributing to WinUI: A Complete Overview"
+description: "Learn how to contribute to WinUI through bug reports, feature proposals, code changes, and documentation — including the CLA and Code of Conduct."
+---
+
+WinUI welcomes community input across all areas of the project: bug reports, feature proposals, code contributions, and documentation updates. This page explains what kinds of contributions are accepted, how to get started, and the agreements you need to complete before your code can be merged.
+
+<Note>
+  The WinUI OSS effort is still in progress. Currently, only product binaries can be built from source — tests and samples are not yet open sourced. See the [WinUI OSS Update discussion](https://github.com/microsoft/microsoft-ui-xaml/discussions/10700) for the latest status.
+</Note>
+
+## Types of contributions
+
+<CardGroup cols={2}>
+  <Card title="Bug reports" icon="bug">
+    File a bug using the Bug Report template in the [issue tracker](https://github.com/Microsoft/microsoft-ui-xaml/issues/new/choose). Security issues should follow the [Security Policy](https://github.com/microsoft/microsoft-ui-xaml/blob/main/docs/SECURITY.md) instead.
+  </Card>
+  <Card title="Feature proposals" icon="lightbulb">
+    Propose new controls, APIs, or UI behaviors using the Feature Proposal template. See [Feature proposals](/contributing/feature-proposals) for the full process.
+  </Card>
+  <Card title="Code contributions" icon="code">
+    Submit pull requests that fix bugs or implement reviewed features. All code changes must follow the contribution workflow and pass automated checks.
+  </Card>
+  <Card title="Documentation & samples" icon="book-open">
+    Contribute to the WinUI docs or add examples to the [WinUI 3 Gallery](https://github.com/Microsoft/WinUI-Gallery/) app. Sample contributions are always welcome.
+  </Card>
+</CardGroup>
+
+## Good first issues
+
+If you are new to the codebase, start with issues tagged with these labels on GitHub:
+
+- [**good first issue**](https://github.com/Microsoft/microsoft-ui-xaml/labels/good%20first%20issue) — straightforward changes with limited scope
+- [**help wanted**](https://github.com/Microsoft/microsoft-ui-xaml/labels/help%20wanted) — issues where community contributions are actively encouraged
+
+Another great way to participate without writing code is to vote and comment on open [feature requests](https://github.com/Microsoft/microsoft-ui-xaml/labels/feature%20request) to signal which proposals matter most to the community.
+
+## Code contribution bar
+
+The WinUI team accepts code changes that improve WinUI or fix bugs, provided they follow the processes below and broadly align with the [WinUI roadmap](https://github.com/microsoft/microsoft-ui-xaml/blob/main/docs/roadmap.md).
+
+<Warning>
+  Changes with narrowly-defined benefits may not be merged due to compatibility risks and maintenance costs. Changes found to be breaking may be reverted after merging.
+</Warning>
+
+In practice, the team accepts contributions that:
+
+- Fix bugs in WinUI 3 (WinUI 2 bugs are generally closed unless security-critical)
+- Implement features that have already completed the [feature proposal process](/contributing/feature-proposals)
+- Improve performance or internal code quality without changing public API
+- Add or update tests corresponding to a change
+
+Do not submit pull requests that alter public APIs, change UI behaviors, or modify licensing headers without first completing the feature proposal process.
+
+## Contribution workflow
+
+<Steps>
+  <Step title="Create or find an issue">
+    All code changes must be tied to a GitHub issue. Check for an existing issue before filing a new one. If your change adds or changes public API or UI, follow the [feature proposal process](/contributing/feature-proposals) first.
+  </Step>
+  <Step title="Fork and branch">
+    Create a personal fork of the repository, then create a branch off `main` with a name that clearly describes your intent:
+    ```bash
+    git checkout -b fix/button-focus-ring
+    ```
+  </Step>
+  <Step title="Make your changes">
+    Follow the existing coding style of the file you're editing. Add tests for any new behavior. Format commit messages as a short summary (50 chars or less), followed by a blank line and a more detailed explanation wrapped at 72 characters.
+  </Step>
+  <Step title="Build and test">
+    Build the repository and confirm all existing tests pass alongside your new ones. See the [build documentation](/contributing/debugging) for help with build failures.
+  </Step>
+  <Step title="Open a pull request">
+    Push your branch and open a PR against the `main` branch. It is fine to open a `[WIP]` PR early to start the feedback process. A WinUI team member can trigger Azure Pipeline checks on fork PRs by commenting `/azp run`.
+  </Step>
+  <Step title="Complete the CLA check">
+    A CLA bot will check your PR automatically. If you haven't signed the CLA yet, the bot will provide instructions. You only need to complete this once across all Microsoft repos.
+  </Step>
+</Steps>
+
+## PR checks
+
+Every pull request to `main` must pass the following checks before it can be merged:
+
+| Check | Description |
+|---|---|
+| **WinUI-Public-MUX-PR** | Builds your change, runs automated tests, and produces a NuGet package. |
+| **license/cla** | Confirms you have signed the Contributor License Agreement. |
+
+Once all checks pass, maintainers can apply the `auto merge` label to queue an automatic merge after an 8-hour delay.
+
+## Contributor License Agreement
+
+Most contributions require you to sign a Contributor License Agreement (CLA), which confirms that you have the right to grant Microsoft the rights to use your contribution. Visit [cla.microsoft.com](https://cla.microsoft.com) for details.
+
+The CLA bot on GitHub handles this automatically. You will only need to sign once across all repositories that use Microsoft's CLA.
+
+<Info>
+  Do not submit code you did not write yourself. If you find third-party code you want to include, file an issue first. If a file from another project is included in a PR, its license must be permissive, the original license must be preserved, and the contribution must be attributed in the third-party notices file.
+</Info>
+
+## Code of Conduct
+
+All interactions in the WinUI repository — issues, pull requests, discussions, and comments — must follow the [Microsoft Open Source Code of Conduct](https://github.com/microsoft/microsoft-ui-xaml/blob/main/CODE_OF_CONDUCT.md). Please read it before participating.
+
+## Current OSS status
+
+The WinUI open-source effort is ongoing. As of the latest update:
+
+- Product binaries (`Microsoft.UI.Xaml.*.dll`) can be built from source
+- Tests, samples, and the XAML Compiler are not yet fully open sourced
+- `Microsoft.UI.Xaml.sln` cannot yet be built; use `Microsoft.UI.Xaml.OSS.sln` instead
+- There is no CI system support for running builds or tests yet
+
+<Tip>
+  Follow the [WinUI OSS Update discussion](https://github.com/microsoft/microsoft-ui-xaml/discussions/10700) to stay informed as more of the codebase becomes open source.
+</Tip>

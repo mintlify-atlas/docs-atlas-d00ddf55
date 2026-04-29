@@ -1,0 +1,303 @@
+---
+title: "Dialogs and Flyouts in WinUI: Overlays and Notifications"
+description: "Guide to InfoBar, TeachingTip, CommandBarFlyout, MenuBar, and RadioMenuFlyoutItem for in-page banners, callout tips, command surfaces, and menu systems."
+---
+
+WinUI provides a range of non-modal overlay and notification controls. These controls keep users informed without pulling them into a blocking dialog, and they integrate with keyboard navigation and screen reader accessibility out of the box.
+
+## InfoBar
+
+`InfoBar` is a persistent, inline notification banner intended for important app-level messages. It supports four severity levels — informational, success, warning, and error — each with a distinct icon and color. The bar can include a custom action button and custom body content.
+
+<Tabs>
+  <Tab title="Informational">
+```xml
+<muxc:InfoBar
+    IsOpen="True"
+    Title="Update available"
+    Message="A new version of this app is ready to install."
+    Severity="Informational">
+    <muxc:InfoBar.ActionButton>
+        <Button Content="Install now" Click="InstallButton_Click" />
+    </muxc:InfoBar.ActionButton>
+</muxc:InfoBar>
+```
+  </Tab>
+  <Tab title="Success">
+```xml
+<muxc:InfoBar
+    IsOpen="True"
+    Title="File saved"
+    Message="Your changes have been saved successfully."
+    Severity="Success"
+    IsClosable="True" />
+```
+  </Tab>
+  <Tab title="Warning">
+```xml
+<muxc:InfoBar
+    IsOpen="True"
+    Title="Low disk space"
+    Message="You have less than 1 GB of storage remaining."
+    Severity="Warning"
+    IsClosable="False" />
+```
+  </Tab>
+  <Tab title="Error">
+```xml
+<muxc:InfoBar
+    IsOpen="True"
+    Title="Connection failed"
+    Message="Check your network connection and try again."
+    Severity="Error">
+    <muxc:InfoBar.ActionButton>
+        <HyperlinkButton Content="Troubleshoot" NavigateUri="ms-settings:network" />
+    </muxc:InfoBar.ActionButton>
+</muxc:InfoBar>
+```
+  </Tab>
+  <Tab title="Custom content">
+```xml
+<muxc:InfoBar
+    IsOpen="True"
+    Title="Rate this app"
+    Severity="Informational">
+    <muxc:RatingControl Value="4" />
+</muxc:InfoBar>
+```
+  </Tab>
+</Tabs>
+
+### Key properties
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `IsOpen` | `Boolean` | `false` | Whether the bar is visible. |
+| `Title` | `String` | — | Bold heading shown at the start of the bar. |
+| `Message` | `String` | — | Secondary message text. |
+| `Severity` | `InfoBarSeverity` | `Informational` | `Informational`, `Success`, `Warning`, or `Error`. |
+| `IsClosable` | `Boolean` | `true` | Whether the close button is visible. |
+| `IsIconVisible` | `Boolean` | `true` | Whether the severity icon is shown. |
+| `IconSource` | `IconSource` | — | Override the default severity icon. |
+| `ActionButton` | `ButtonBase` | — | An action button or hyperlink placed at the end of the bar. |
+| `Content` | `Object` | — | Custom content rendered below the title and message. |
+| `ContentTemplate` | `DataTemplate` | — | Template for the `Content` value. |
+| `CloseButtonCommand` | `ICommand` | — | Command invoked when the close button is clicked. |
+
+### Events
+
+| Event | Description |
+|---|---|
+| `CloseButtonClick` | Fires when the user clicks the close button. |
+| `Closing` | Fires before the bar closes; set `Cancel = true` to prevent closure. |
+| `Closed` | Fires after the bar has closed, with the `InfoBarCloseReason`. |
+
+---
+
+## TeachingTip
+
+`TeachingTip` is an anchored callout used to guide users through new features or settings. It can be attached to any `FrameworkElement` via the `Target` property, or displayed free-floating in the center of the window. It supports a hero image area, action and close buttons, and configurable placement.
+
+<Tabs>
+  <Tab title="Anchored">
+```xml
+<!-- The tip is declared in the page XAML and opens programmatically -->
+<Button x:Name="SaveButton" Content="Save" Click="SaveButton_Click" />
+
+<muxc:TeachingTip
+    x:Name="SaveTip"
+    Target="{x:Bind SaveButton}"
+    Title="Auto-save is on"
+    Subtitle="Your work is saved every 30 seconds. Click here to adjust the interval."
+    PreferredPlacement="Bottom"
+    IsLightDismissEnabled="True">
+    <muxc:TeachingTip.ActionButton>
+        <Button Content="Adjust settings" Click="AdjustSettings_Click" />
+    </muxc:TeachingTip.ActionButton>
+</muxc:TeachingTip>
+```
+  </Tab>
+  <Tab title="With hero content">
+```xml
+<muxc:TeachingTip
+    x:Name="FeatureTip"
+    Title="Meet the new editor"
+    Subtitle="A redesigned experience with more tools at your fingertips."
+    HeroContentPlacement="Top"
+    PreferredPlacement="Auto">
+    <muxc:TeachingTip.HeroContent>
+        <Image Source="ms-appx:///Assets/editor-hero.png" />
+    </muxc:TeachingTip.HeroContent>
+    <muxc:TeachingTip.ActionButton>
+        <Button Content="Take a tour" />
+    </muxc:TeachingTip.ActionButton>
+    <muxc:TeachingTip.CloseButtonContent>
+        Not now
+    </muxc:TeachingTip.CloseButtonContent>
+</muxc:TeachingTip>
+```
+  </Tab>
+  <Tab title="Free-floating center">
+```xml
+<muxc:TeachingTip
+    x:Name="WelcomeTip"
+    Title="Welcome to the app"
+    Subtitle="Here are a few things you can do to get started."
+    PreferredPlacement="Center"
+    IsLightDismissEnabled="False">
+    <muxc:TeachingTip.CloseButtonContent>
+        Got it
+    </muxc:TeachingTip.CloseButtonContent>
+</muxc:TeachingTip>
+```
+  </Tab>
+</Tabs>
+
+<Note>
+Open a `TeachingTip` by setting its `IsOpen` property to `true` in code-behind or via a binding. TeachingTips should appear in response to a specific user action or the first-run experience — avoid showing them on every launch.
+</Note>
+
+### Key properties
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `IsOpen` | `Boolean` | `false` | Whether the tip is visible. |
+| `Title` | `String` | — | Primary heading. |
+| `Subtitle` | `String` | — | Supporting text shown below the title. |
+| `Target` | `FrameworkElement` | — | The UI element the tip's tail points to. |
+| `PreferredPlacement` | `TeachingTipPlacementMode` | `Auto` | Requested placement direction relative to the target. |
+| `TailVisibility` | `TeachingTipTailVisibility` | `Auto` | `Auto`, `Visible`, or `Collapsed`. |
+| `IsLightDismissEnabled` | `Boolean` | `false` | Close when the user clicks or taps outside the tip. |
+| `ShouldConstrainToRootBounds` | `Boolean` | `true` | Keep the tip inside the window bounds. |
+| `HeroContent` | `UIElement` | — | Full-width image or visual shown at the top or bottom. |
+| `HeroContentPlacement` | `TeachingTipHeroContentPlacementMode` | `Auto` | `Auto`, `Top`, or `Bottom`. |
+| `ActionButtonContent` | `Object` | — | Content for the primary action button. |
+| `CloseButtonContent` | `Object` | — | Content for the dismiss button (default is an X icon). |
+| `IconSource` | `IconSource` | — | Icon shown in the tip header. |
+
+### Events
+
+| Event | Description |
+|---|---|
+| `ActionButtonClick` | Fires when the user clicks the action button. |
+| `CloseButtonClick` | Fires when the user clicks the close button. |
+| `Closing` | Fires before the tip closes; `Cancel` can defer or prevent it. |
+| `Closed` | Fires after the tip has closed, with a `TeachingTipCloseReason`. |
+
+---
+
+## CommandBarFlyout
+
+`CommandBarFlyout` combines a `CommandBar` and a `MenuFlyout` into a single dismissible surface. It provides a persistent row of `AppBarButton` items and an optional collapsed overflow area. Attach it to any element via the `FlyoutBase.AttachedFlyout` pattern, or show it as a context menu.
+
+```xml
+<muxc:CommandBarFlyout x:Name="ImageFlyout">
+    <AppBarButton Icon="Cut" Label="Cut" />
+    <AppBarButton Icon="Copy" Label="Copy" />
+    <AppBarButton Icon="Paste" Label="Paste" />
+    <muxc:CommandBarFlyout.SecondaryCommands>
+        <AppBarButton Icon="SelectAll" Label="Select all" />
+        <AppBarSeparator />
+        <AppBarButton Icon="Undo" Label="Undo" />
+        <AppBarButton Icon="Redo" Label="Redo" />
+    </muxc:CommandBarFlyout.SecondaryCommands>
+</muxc:CommandBarFlyout>
+```
+
+To show a `CommandBarFlyout` as a context menu on right-click or long-press:
+
+```csharp
+private void Image_RightTapped(object sender, RightTappedRoutedEventArgs e)
+{
+    ImageFlyout.ShowAt(sender as FrameworkElement,
+        new FlyoutShowOptions { Position = e.GetPosition(sender as UIElement) });
+}
+```
+
+<Tip>
+Place the most common actions in the primary bar (always visible) and less frequent actions in `SecondaryCommands` (accessible from the `...` overflow button).
+</Tip>
+
+---
+
+## MenuBar
+
+`MenuBar` renders a classic horizontal menu bar strip at the top of a window or region. Each `MenuBarItem` has a `Title` and a collection of `MenuFlyoutItemBase` entries that appear in a dropdown flyout when the item is clicked.
+
+```xml
+<muxc:MenuBar>
+    <muxc:MenuBarItem Title="File">
+        <MenuFlyoutItem Text="New" />
+        <MenuFlyoutItem Text="Open..." />
+        <MenuFlyoutSeparator />
+        <MenuFlyoutItem Text="Save" />
+        <MenuFlyoutItem Text="Save as..." />
+        <MenuFlyoutSeparator />
+        <MenuFlyoutItem Text="Exit" />
+    </muxc:MenuBarItem>
+    <muxc:MenuBarItem Title="Edit">
+        <MenuFlyoutItem Text="Undo" />
+        <MenuFlyoutItem Text="Redo" />
+        <MenuFlyoutSeparator />
+        <MenuFlyoutItem Text="Cut" />
+        <MenuFlyoutItem Text="Copy" />
+        <MenuFlyoutItem Text="Paste" />
+    </muxc:MenuBarItem>
+    <muxc:MenuBarItem Title="View">
+        <MenuFlyoutItem Text="Zoom in" />
+        <MenuFlyoutItem Text="Zoom out" />
+    </muxc:MenuBarItem>
+</muxc:MenuBar>
+```
+
+### Key properties
+
+| Control | Property | Description |
+|---|---|---|
+| `MenuBar` | `Items` | Collection of `MenuBarItem` objects. |
+| `MenuBarItem` | `Title` | The top-level label shown in the bar. |
+| `MenuBarItem` | `Items` | Collection of `MenuFlyoutItemBase` entries in the dropdown. |
+
+---
+
+## RadioMenuFlyoutItem
+
+`RadioMenuFlyoutItem` extends `MenuFlyoutItem` with radio-button semantics. Items in the same `GroupName` are mutually exclusive — selecting one automatically deselects others in the group. Use `AreCheckStatesEnabled` on a `MenuFlyoutSubItem` to opt into visual check marks for the group.
+
+```xml
+<muxc:MenuBar>
+    <muxc:MenuBarItem Title="View">
+        <muxc:RadioMenuFlyoutItem
+            Text="Small icons"
+            GroupName="ViewMode"
+            IsChecked="False" />
+        <muxc:RadioMenuFlyoutItem
+            Text="Medium icons"
+            GroupName="ViewMode"
+            IsChecked="True" />
+        <muxc:RadioMenuFlyoutItem
+            Text="Large icons"
+            GroupName="ViewMode"
+            IsChecked="False" />
+        <MenuFlyoutSeparator />
+        <MenuFlyoutSubItem
+            Text="Sort by"
+            muxc:RadioMenuFlyoutItem.AreCheckStatesEnabled="True">
+            <muxc:RadioMenuFlyoutItem Text="Name" GroupName="SortMode" IsChecked="True" />
+            <muxc:RadioMenuFlyoutItem Text="Date" GroupName="SortMode" IsChecked="False" />
+            <muxc:RadioMenuFlyoutItem Text="Size" GroupName="SortMode" IsChecked="False" />
+        </MenuFlyoutSubItem>
+    </muxc:MenuBarItem>
+</muxc:MenuBar>
+```
+
+### Key properties
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `IsChecked` | `Boolean` | — | Whether this item is the currently selected option in its group. |
+| `GroupName` | `String` | — | Name that ties radio items together into a mutual-exclusion group. |
+
+<Note>
+`RadioMenuFlyoutItem` inherits all `MenuFlyoutItem` properties including `Text`, `Icon`, `Command`, and `CommandParameter`.
+</Note>

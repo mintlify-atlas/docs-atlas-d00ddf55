@@ -1,0 +1,237 @@
+---
+title: "WinUI resources, styles, and theme tokens"
+description: "Add XamlControlsResources to your app, override control styles with resource keys, and use StaticResource vs ThemeResource for Fluent Design tokens."
+---
+
+WinUI ships its control styles, brushes, and visual tokens as XAML resource dictionaries. To access these styles in your app, you include `XamlControlsResources` in your application's resources. From there you can override individual controls, reference semantic color tokens, and customize the visual appearance of every WinUI control.
+
+## Adding XamlControlsResources to your app
+
+`XamlControlsResources` is a `ResourceDictionary` subclass that loads all WinUI control styles, theme dictionaries, and shared tokens into your app's resource tree. You must add it to `Application.Resources` for WinUI controls to render correctly.
+
+```xml App.xaml
+<Application
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Application.Resources>
+        <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
+    </Application.Resources>
+</Application>
+```
+
+<Note>
+  WinUI project templates add `XamlControlsResources` automatically. You only need to add it manually if you created an app without a WinUI template, or if you need to merge it alongside other dictionaries.
+</Note>
+
+### Merging with other resource dictionaries
+
+If your app has additional resource dictionaries, place `XamlControlsResources` inside a `ResourceDictionary.MergedDictionaries` collection. WinUI control styles must be present for the controls to display — make sure `XamlControlsResources` is included even when other dictionaries are merged:
+
+```xml App.xaml
+<Application.Resources>
+    <ResourceDictionary>
+        <ResourceDictionary.MergedDictionaries>
+            <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
+            <ResourceDictionary Source="ms-appx:///MyCustomStyles.xaml" />
+        </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
+</Application.Resources>
+```
+
+## Overriding control styles
+
+Every WinUI control has a default style identified by a key in the form `Default{ControlName}Style`. You can replace a control's style entirely by defining a new `Style` with the same `TargetType` in a scope that takes precedence over `XamlControlsResources`.
+
+### Override a single control instance
+
+Set the `Style` property directly on the element:
+
+```xml
+<Button Content="Save">
+    <Button.Style>
+        <Style TargetType="Button">
+            <Setter Property="Background" Value="{ThemeResource AccentFillColorDefaultBrush}" />
+            <Setter Property="Foreground" Value="{ThemeResource TextOnAccentFillColorPrimaryBrush}" />
+            <Setter Property="CornerRadius" Value="4" />
+        </Style>
+    </Button.Style>
+</Button>
+```
+
+### Override all instances of a control type
+
+Define an implicit style (without an `x:Key`) in a `ResourceDictionary` in scope. An implicit style applies to every control of that `TargetType` within the resource scope:
+
+```xml
+<Page.Resources>
+    <Style TargetType="Button">
+        <Setter Property="CornerRadius" Value="0" />
+        <Setter Property="Padding" Value="16,8" />
+    </Style>
+</Page.Resources>
+```
+
+### Extend the default style with BasedOn
+
+To keep the default WinUI appearance and change only specific setters, use `BasedOn`:
+
+```xml
+<Style x:Key="PrimaryButtonStyle" TargetType="Button"
+       BasedOn="{StaticResource DefaultButtonStyle}">
+    <Setter Property="Background" Value="{ThemeResource AccentFillColorDefaultBrush}" />
+</Style>
+```
+
+## Control template overrides
+
+For deeper customization, replace the control's `ControlTemplate`. Copy the existing template from `Button_themeresources.xaml` (or the WinUI source) as a starting point, then modify only the parts you need:
+
+```xml
+<Style x:Key="RoundedButtonStyle" TargetType="Button"
+       BasedOn="{StaticResource DefaultButtonStyle}">
+    <Setter Property="Template">
+        <Setter.Value>
+            <ControlTemplate TargetType="Button">
+                <ContentPresenter
+                    Background="{TemplateBinding Background}"
+                    Foreground="{TemplateBinding Foreground}"
+                    BorderBrush="{TemplateBinding BorderBrush}"
+                    BorderThickness="{TemplateBinding BorderThickness}"
+                    Content="{TemplateBinding Content}"
+                    CornerRadius="20"
+                    Padding="{TemplateBinding Padding}"
+                    HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                    VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+            </ControlTemplate>
+        </Setter.Value>
+    </Setter>
+</Style>
+```
+
+<Warning>
+  Replacing a `ControlTemplate` removes all visual states defined in the default template, including hover, pressed, and disabled states. Re-implement `VisualStateManager` groups in your template to restore interactive feedback.
+</Warning>
+
+## Resource key naming conventions
+
+WinUI's semantic resource keys follow consistent naming patterns that reflect function rather than color value. This makes resources work correctly across light, dark, and high-contrast themes.
+
+### Text fill colors
+
+| Key | Usage |
+|-----|-------|
+| `TextFillColorPrimaryBrush` | Primary body text |
+| `TextFillColorSecondaryBrush` | Secondary, helper, or hint text |
+| `TextFillColorTertiaryBrush` | Placeholder and caption text |
+| `TextFillColorDisabledBrush` | Text on disabled controls |
+| `TextFillColorInverseBrush` | Text on accent-colored surfaces |
+| `TextOnAccentFillColorPrimaryBrush` | Text on accent-filled buttons |
+| `TextOnAccentFillColorSecondaryBrush` | Secondary text on accent surfaces |
+
+### Control fill colors
+
+| Key | Usage |
+|-----|-------|
+| `ControlFillColorDefaultBrush` | Default background of interactive controls |
+| `ControlFillColorSecondaryBrush` | Hover background |
+| `ControlFillColorTertiaryBrush` | Pressed background |
+| `ControlFillColorDisabledBrush` | Disabled control background |
+| `ControlFillColorInputActiveBrush` | Active input field background |
+| `SubtleFillColorSecondaryBrush` | Subtle hover fill (low-emphasis elements) |
+| `SubtleFillColorTertiaryBrush` | Subtle pressed fill |
+
+### Background fill colors
+
+| Key | Usage |
+|-----|-------|
+| `SolidBackgroundFillColorBaseBrush` | Page or window base background |
+| `SolidBackgroundFillColorSecondaryBrush` | Secondary panel background |
+| `SolidBackgroundFillColorTertiaryBrush` | Card or elevated surface background |
+| `LayerFillColorDefaultBrush` | Layer on top of base background |
+| `CardBackgroundFillColorDefaultBrush` | Card fill |
+
+### Stroke and border colors
+
+| Key | Usage |
+|-----|-------|
+| `ControlStrokeColorDefaultBrush` | Default control border |
+| `ControlStrokeColorSecondaryBrush` | Focus ring and emphasis border |
+| `ControlElevationBorderBrush` | Gradient border on elevated controls (e.g., Button) |
+| `DividerStrokeColorDefaultBrush` | Horizontal rule / list divider |
+| `FocusStrokeColorOuterBrush` | Outer ring of the keyboard focus rectangle |
+| `FocusStrokeColorInnerBrush` | Inner ring of the keyboard focus rectangle |
+
+### Button-specific keys
+
+| Key | Usage |
+|-----|-------|
+| `ButtonBackground` | Default button fill |
+| `ButtonBackgroundPointerOver` | Button fill on hover |
+| `ButtonBackgroundPressed` | Button fill when pressed |
+| `ButtonBackgroundDisabled` | Button fill when disabled |
+| `ButtonForeground` | Button label color |
+| `ButtonBorderBrush` | Button border |
+| `AccentButtonBackground` | Accent-style button fill |
+| `AccentButtonForeground` | Accent button label color |
+
+## StaticResource vs ThemeResource
+
+Both markup extensions retrieve a resource by key, but they differ in when the lookup happens:
+
+<Tabs>
+  <Tab title="ThemeResource">
+    **Recommended for most Fluent tokens.** Re-evaluates when the active theme changes. Use this for any color, brush, or value that must respond to light/dark/high-contrast switching.
+
+    ```xml
+    <Button Background="{ThemeResource ButtonBackground}" />
+    ```
+
+    Use `ThemeResource` for:
+    - Brushes and colors defined in `ThemeDictionaries`
+    - Any value that differs between light and dark themes
+    - Accent color brushes (`SystemAccentColor` variants)
+  </Tab>
+  <Tab title="StaticResource">
+    **Looked up once at load time.** Does not re-evaluate if the theme changes. Use this for values that are theme-independent — layout tokens, sizes, corner radii, and other scalar values.
+
+    ```xml
+    <Button Padding="{StaticResource ButtonPadding}" />
+    ```
+
+    Use `StaticResource` for:
+    - Thickness, size, and padding tokens (e.g., `ButtonPadding`, `ControlCornerRadius`)
+    - References to other resources that are themselves theme-aware
+    - Named styles (e.g., `BasedOn="{StaticResource DefaultButtonStyle}"`)
+  </Tab>
+</Tabs>
+
+<Tip>
+  When in doubt, use `{ThemeResource}`. The runtime overhead is negligible, and it prevents hard-to-diagnose visual bugs when the user switches themes or moves between light and dark mode.
+</Tip>
+
+## Common accent color resources
+
+WinUI exposes the user's chosen accent color as a set of shaded variants:
+
+| Key | Description |
+|-----|-------------|
+| `SystemAccentColor` | The user's selected accent color |
+| `SystemAccentColorLight1` | One step lighter (used in dark theme text) |
+| `SystemAccentColorLight2` | Two steps lighter |
+| `SystemAccentColorLight3` | Three steps lighter |
+| `SystemAccentColorDark1` | One step darker (used in light theme text) |
+| `SystemAccentColorDark2` | Two steps darker |
+| `SystemAccentColorDark3` | Three steps darker |
+
+Reference these as `{ThemeResource SystemAccentColorDark1}` etc. to use the user's accent color in custom elements.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Fluent Design" icon="sparkles" href="/theming/fluent-design">
+    Learn about Mica, Acrylic, and system backdrop support.
+  </Card>
+  <Card title="Compact resources" icon="compress" href="/theming/compact-resources">
+    Reduce spacing and control height with compact density mode.
+  </Card>
+</CardGroup>

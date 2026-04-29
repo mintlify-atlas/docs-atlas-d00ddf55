@@ -1,0 +1,390 @@
+---
+title: "NavigationView API Reference — WinUI 3 Nav Shell"
+description: "Full API reference for WinUI NavigationView: properties, events, display modes, pane configuration, and frame navigation patterns with code examples."
+---
+
+NavigationView is the primary navigation shell control in WinUI. It renders a collapsible pane containing menu items alongside a content area, and adapts its layout automatically based on available window width. You can configure the pane to appear on the left side (default), at the top, in a compact icon-only mode, or in a minimal overlay mode that hides the pane until the user opens it.
+
+## Key features
+
+- Three adaptive display modes: **Expanded**, **Compact**, and **Minimal** — selected automatically based on window width or set explicitly via `PaneDisplayMode`
+- Built-in back button with `BackRequested` event for frame-based navigation
+- Hierarchical menu items via `NavigationViewItem.MenuItems`
+- Header, footer, and custom pane content areas
+- Settings item shown automatically at the bottom of the pane
+- Keyboard and gamepad navigation built in
+- `AutoSuggestBox` integration in the pane header area
+
+## Basic usage
+
+The minimum setup requires `NavigationViewItem` children inside `MenuItems` and a content area. Bind `SelectionChanged` to navigate a `Frame`.
+
+<Tabs>
+  <Tab title="XAML">
+```xml
+<NavigationView x:Name="NavView"
+                SelectionChanged="NavView_SelectionChanged"
+                Loaded="NavView_Loaded">
+    <NavigationView.MenuItems>
+        <NavigationViewItem Icon="Home" Content="Home" Tag="home" />
+        <NavigationViewItem Icon="Contact" Content="Accounts" Tag="accounts" />
+        <NavigationViewItem Icon="Setting" Content="Settings" Tag="settings_page" />
+    </NavigationView.MenuItems>
+    <Frame x:Name="ContentFrame" />
+</NavigationView>
+```
+  </Tab>
+  <Tab title="C#">
+```csharp
+private void NavView_Loaded(object sender, RoutedEventArgs e)
+{
+    // Select the first item on load
+    NavView.SelectedItem = NavView.MenuItems[0];
+}
+
+private void NavView_SelectionChanged(NavigationView sender,
+    NavigationViewSelectionChangedEventArgs args)
+{
+    if (args.IsSettingsSelected)
+    {
+        ContentFrame.Navigate(typeof(SettingsPage));
+        return;
+    }
+
+    var tag = (args.SelectedItem as NavigationViewItem)?.Tag?.ToString();
+    var pageType = tag switch
+    {
+        "home"         => typeof(HomePage),
+        "accounts"     => typeof(AccountsPage),
+        "settings_page" => typeof(AppSettingsPage),
+        _              => null
+    };
+
+    if (pageType is not null)
+        ContentFrame.Navigate(pageType, null,
+            args.RecommendedNavigationTransitionInfo);
+}
+```
+  </Tab>
+</Tabs>
+
+## Properties
+
+<ParamField path="MenuItems" type="IVector&lt;Object&gt;">
+  The collection of `NavigationViewItem`, `NavigationViewItemSeparator`, and `NavigationViewItemHeader` objects shown in the pane. Mutually exclusive with `MenuItemsSource`. Read-only; add and remove items directly on the returned collection.
+</ParamField>
+
+<ParamField path="MenuItemsSource" type="Object">
+  A data source bound to the pane menu list. When set, `MenuItems` reflects the generated containers. Use `MenuItemTemplate` to define how each data object renders.
+</ParamField>
+
+<ParamField path="FooterMenuItems" type="IVector&lt;Object&gt;">
+  Items pinned to the bottom of the pane, above the settings item. Useful for account switchers or secondary actions. Read-only collection.
+</ParamField>
+
+<ParamField path="FooterMenuItemsSource" type="Object">
+  Data source equivalent of `FooterMenuItems` for binding scenarios.
+</ParamField>
+
+<ParamField path="SelectedItem" type="Object">
+  The currently selected item. Set programmatically to update selection and fire `SelectionChanged`. Set to `null` to clear selection.
+</ParamField>
+
+<ParamField path="Header" type="Object">
+  Content displayed in the header bar above the main content area. Typically a string or a custom `UIElement`.
+</ParamField>
+
+<ParamField path="HeaderTemplate" type="DataTemplate">
+  A `DataTemplate` used to render the `Header` object.
+</ParamField>
+
+<ParamField path="PaneTitle" type="String">
+  Text label shown at the top of the pane, next to the pane toggle button.
+</ParamField>
+
+<ParamField path="PaneHeader" type="UIElement">
+  Custom UI placed in the pane header area, above the `AutoSuggestBox` and menu items.
+</ParamField>
+
+<ParamField path="PaneFooter" type="UIElement">
+  Custom UI placed at the very bottom of the pane, below the footer menu items and settings item.
+</ParamField>
+
+<ParamField path="PaneCustomContent" type="UIElement">
+  Custom UI inserted between the `AutoSuggestBox` and the menu items list.
+</ParamField>
+
+<ParamField path="IsPaneOpen" type="Boolean" default="true">
+  Whether the pane is currently expanded. Applies to `Left` and `LeftCompact` modes. Toggle this to open or close the pane programmatically.
+</ParamField>
+
+<ParamField path="IsPaneVisible" type="Boolean" default="true">
+  Whether the pane is visible at all. Set to `false` to hide the pane entirely, for example when showing a full-screen content view.
+</ParamField>
+
+<ParamField path="IsPaneToggleButtonVisible" type="Boolean" default="true">
+  Whether the hamburger toggle button appears in the pane header. Hide it when providing a custom open/close mechanism.
+</ParamField>
+
+<ParamField path="PaneDisplayMode" type="NavigationViewPaneDisplayMode" default="Auto">
+  Controls how the pane is positioned. Accepted values:
+
+  | Value | Behavior |
+  |---|---|
+  | `Auto` | Adapts between Left, LeftCompact, and Minimal based on window width |
+  | `Left` | Always shows the full expanded left pane |
+  | `Top` | Renders menu items in a horizontal top bar |
+  | `LeftCompact` | Always shows a compact icon-only left pane |
+  | `LeftMinimal` | Always shows the minimal overlay pane |
+</ParamField>
+
+<ParamField path="DisplayMode" type="NavigationViewDisplayMode">
+  Read-only. The currently active display mode: `Minimal`, `Compact`, or `Expanded`. Changes as the window is resized in `Auto` mode.
+</ParamField>
+
+<ParamField path="CompactModeThresholdWidth" type="Double" default="641">
+  The window width in pixels below which `Auto` mode switches from `Compact` to `Minimal`.
+</ParamField>
+
+<ParamField path="ExpandedModeThresholdWidth" type="Double" default="1008">
+  The window width in pixels above which `Auto` mode switches from `Compact` to `Expanded`.
+</ParamField>
+
+<ParamField path="OpenPaneLength" type="Double" default="320">
+  Width of the pane when expanded, in pixels.
+</ParamField>
+
+<ParamField path="CompactPaneLength" type="Double" default="48">
+  Width of the pane in `Compact` (icon-only) mode, in pixels.
+</ParamField>
+
+<ParamField path="IsBackButtonVisible" type="NavigationViewBackButtonVisible" default="Auto">
+  Controls back button visibility. `Auto` shows the button only when there is history to navigate back to. `Visible` always shows it. `Collapsed` hides it permanently.
+</ParamField>
+
+<ParamField path="IsBackEnabled" type="Boolean">
+  Whether the back button is in an enabled (clickable) state. Bind this to `Frame.CanGoBack` to keep it synchronized with navigation history.
+</ParamField>
+
+<ParamField path="IsSettingsVisible" type="Boolean" default="true">
+  Whether the built-in settings item appears at the bottom of the pane.
+</ParamField>
+
+<ParamField path="SettingsItem" type="Object">
+  Read-only reference to the generated settings `NavigationViewItem`. Use this to set a tooltip or access the container.
+</ParamField>
+
+<ParamField path="AlwaysShowHeader" type="Boolean" default="true">
+  When `true`, the header area is shown in all display modes. When `false`, the header is hidden in `Expanded` mode.
+</ParamField>
+
+<ParamField path="SelectionFollowsFocus" type="NavigationViewSelectionFollowsFocus" default="Disabled">
+  When `Enabled`, keyboard focus changes automatically update `SelectedItem` without requiring an explicit invoke.
+</ParamField>
+
+<ParamField path="ShoulderNavigationEnabled" type="NavigationViewShoulderNavigationEnabled" default="Never">
+  Enables gamepad shoulder-button navigation through menu items. `WhenSelectionFollowsFocus` enables it only when `SelectionFollowsFocus` is `Enabled`.
+</ParamField>
+
+<ParamField path="OverflowLabelMode" type="NavigationViewOverflowLabelMode" default="MoreLabel">
+  Controls the label on the overflow button in `Top` mode. `MoreLabel` shows "More". `NoLabel` shows only the icon.
+</ParamField>
+
+<ParamField path="AutoSuggestBox" type="AutoSuggestBox">
+  An `AutoSuggestBox` rendered inside the pane. Assign a configured `AutoSuggestBox` instance to add in-pane search.
+</ParamField>
+
+<ParamField path="MenuItemTemplate" type="DataTemplate">
+  `DataTemplate` used to render items from `MenuItemsSource`.
+</ParamField>
+
+<ParamField path="MenuItemTemplateSelector" type="DataTemplateSelector">
+  A `DataTemplateSelector` for choosing a template per item when the menu is data-bound.
+</ParamField>
+
+<ParamField path="MenuItemContainerStyle" type="Style">
+  A `Style` targeting `NavigationViewItem` applied to all containers in the menu.
+</ParamField>
+
+<ParamField path="ContentOverlay" type="UIElement">
+  A `UIElement` rendered on top of the content area, outside the pane. Use for overlays such as teaching tips or notification banners.
+</ParamField>
+
+<ParamField path="IsTitleBarAutoPaddingEnabled" type="Boolean" default="true">
+  When `true`, NavigationView automatically adds top padding to account for a custom title bar.
+</ParamField>
+
+## Events
+
+<ParamField path="SelectionChanged" type="TypedEventHandler&lt;NavigationView, NavigationViewSelectionChangedEventArgs&gt;">
+  Fires when the user selects a different item or when `SelectedItem` is changed in code. The event args expose `SelectedItem`, `SelectedItemContainer`, `IsSettingsSelected`, and `RecommendedNavigationTransitionInfo`.
+</ParamField>
+
+<ParamField path="ItemInvoked" type="TypedEventHandler&lt;NavigationView, NavigationViewItemInvokedEventArgs&gt;">
+  Fires each time a menu item is tapped or activated, even if it is already selected. The args expose `InvokedItem`, `InvokedItemContainer`, `IsSettingsInvoked`, and `RecommendedNavigationTransitionInfo`.
+</ParamField>
+
+<ParamField path="BackRequested" type="TypedEventHandler&lt;NavigationView, NavigationViewBackRequestedEventArgs&gt;">
+  Fires when the user activates the back button. Handle this event to call `Frame.GoBack()`.
+</ParamField>
+
+<ParamField path="DisplayModeChanged" type="TypedEventHandler&lt;NavigationView, NavigationViewDisplayModeChangedEventArgs&gt;">
+  Fires when `DisplayMode` changes, for example when the window is resized in `Auto` mode.
+</ParamField>
+
+<ParamField path="PaneOpening" type="TypedEventHandler&lt;NavigationView, Object&gt;">
+  Fires just before the pane opens.
+</ParamField>
+
+<ParamField path="PaneOpened" type="TypedEventHandler&lt;NavigationView, Object&gt;">
+  Fires after the pane has fully opened.
+</ParamField>
+
+<ParamField path="PaneClosing" type="TypedEventHandler&lt;NavigationView, NavigationViewPaneClosingEventArgs&gt;">
+  Fires just before the pane closes. Set `Cancel = true` on the event args to prevent closing.
+</ParamField>
+
+<ParamField path="PaneClosed" type="TypedEventHandler&lt;NavigationView, Object&gt;">
+  Fires after the pane has fully closed.
+</ParamField>
+
+<ParamField path="Expanding" type="TypedEventHandler&lt;NavigationView, NavigationViewItemExpandingEventArgs&gt;">
+  Fires when a hierarchical `NavigationViewItem` is expanded to reveal its children. The args expose `ExpandingItem` and `ExpandingItemContainer`.
+</ParamField>
+
+<ParamField path="Collapsed" type="TypedEventHandler&lt;NavigationView, NavigationViewItemCollapsedEventArgs&gt;">
+  Fires when a hierarchical `NavigationViewItem` collapses. The args expose `CollapsedItem` and `CollapsedItemContainer`.
+</ParamField>
+
+## Methods
+
+| Method | Description |
+|---|---|
+| `Expand(NavigationViewItem item)` | Programmatically expands a hierarchical item to show its children. |
+| `Collapse(NavigationViewItem item)` | Programmatically collapses a hierarchical item. |
+| `MenuItemFromContainer(DependencyObject)` | Returns the data item for a given container element. |
+| `ContainerFromMenuItem(Object)` | Returns the container element for a given data item. |
+
+## Advanced examples
+
+### Back button wired to Frame navigation
+
+<Tabs>
+  <Tab title="XAML">
+```xml
+<NavigationView x:Name="NavView"
+                IsBackButtonVisible="Visible"
+                IsBackEnabled="{x:Bind ContentFrame.CanGoBack, Mode=OneWay}"
+                BackRequested="NavView_BackRequested"
+                SelectionChanged="NavView_SelectionChanged">
+    <NavigationView.MenuItems>
+        <NavigationViewItem Icon="Home" Content="Home" Tag="home" />
+        <NavigationViewItem Icon="Document" Content="Documents" Tag="docs" />
+    </NavigationView.MenuItems>
+    <Frame x:Name="ContentFrame" Navigated="ContentFrame_Navigated" />
+</NavigationView>
+```
+  </Tab>
+  <Tab title="C#">
+```csharp
+private void NavView_BackRequested(NavigationView sender,
+    NavigationViewBackRequestedEventArgs args)
+{
+    if (ContentFrame.CanGoBack)
+        ContentFrame.GoBack();
+}
+
+private void ContentFrame_Navigated(object sender, NavigationEventArgs e)
+{
+    // Keep the selected item in sync with frame navigation
+    NavView.IsBackEnabled = ContentFrame.CanGoBack;
+}
+```
+  </Tab>
+</Tabs>
+
+### Top-mode navigation
+
+```xml
+<NavigationView PaneDisplayMode="Top"
+                SelectionChanged="NavView_SelectionChanged">
+    <NavigationView.MenuItems>
+        <NavigationViewItem Content="Overview" Tag="overview" />
+        <NavigationViewItem Content="Analytics" Tag="analytics" />
+        <NavigationViewItem Content="Reports" Tag="reports" />
+    </NavigationView.MenuItems>
+    <Frame x:Name="ContentFrame" />
+</NavigationView>
+```
+
+### Hierarchical navigation items
+
+```xml
+<NavigationView SelectionChanged="NavView_SelectionChanged">
+    <NavigationView.MenuItems>
+        <NavigationViewItem Icon="Home" Content="Home" Tag="home" />
+        <NavigationViewItem Icon="Document" Content="Documents" Tag="docs">
+            <NavigationViewItem.MenuItems>
+                <NavigationViewItem Content="Recent" Tag="docs_recent" />
+                <NavigationViewItem Content="Shared" Tag="docs_shared" />
+            </NavigationViewItem.MenuItems>
+        </NavigationViewItem>
+    </NavigationView.MenuItems>
+    <Frame x:Name="ContentFrame" />
+</NavigationView>
+```
+
+### Data-bound menu with MenuItemsSource
+
+<Tabs>
+  <Tab title="XAML">
+```xml
+<NavigationView MenuItemsSource="{x:Bind ViewModel.NavItems}"
+                SelectionChanged="NavView_SelectionChanged">
+    <NavigationView.MenuItemTemplate>
+        <DataTemplate x:DataType="local:NavItem">
+            <NavigationViewItem Content="{x:Bind Label}"
+                                Tag="{x:Bind PageKey}">
+                <NavigationViewItem.Icon>
+                    <FontIcon Glyph="{x:Bind Glyph}" />
+                </NavigationViewItem.Icon>
+            </NavigationViewItem>
+        </DataTemplate>
+    </NavigationView.MenuItemTemplate>
+    <Frame x:Name="ContentFrame" />
+</NavigationView>
+```
+  </Tab>
+  <Tab title="C#">
+```csharp
+public class NavItem
+{
+    public string Label { get; set; }
+    public string PageKey { get; set; }
+    public string Glyph { get; set; }
+}
+
+// In your ViewModel or page:
+public ObservableCollection<NavItem> NavItems { get; } = new()
+{
+    new() { Label = "Home",      PageKey = "home",      Glyph = "\uE80F" },
+    new() { Label = "Documents", PageKey = "docs",      Glyph = "\uE8A5" },
+    new() { Label = "Settings",  PageKey = "settings",  Glyph = "\uE713" },
+};
+```
+  </Tab>
+</Tabs>
+
+## Notes
+
+<Note>
+  `SelectionChanged` and `ItemInvoked` are both raised when the user taps a menu item. Use `SelectionChanged` for page navigation (it fires only when the selection actually changes). Use `ItemInvoked` when you need to react to every tap regardless of current selection.
+</Note>
+
+<Tip>
+  Bind `IsBackEnabled` directly to `Frame.CanGoBack` using `{x:Bind ContentFrame.CanGoBack, Mode=OneWay}` instead of manually tracking navigation history.
+</Tip>
+
+<Warning>
+  Do not set both `MenuItems` and `MenuItemsSource` on the same `NavigationView`. Setting `MenuItemsSource` replaces the `MenuItems` collection and any items added declaratively in XAML will be lost.
+</Warning>

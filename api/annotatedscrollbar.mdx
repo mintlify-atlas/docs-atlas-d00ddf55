@@ -1,0 +1,154 @@
+---
+title: "AnnotatedScrollBar control API reference — WinUI"
+description: "API reference for the WinUI AnnotatedScrollBar. A scrollbar with position labels and hover detail tooltips for fast navigation in long lists."
+---
+
+`AnnotatedScrollBar` is a WinUI control that extends a standard scroll bar with visible text labels at specified scroll offsets. When a user hovers over the bar, a detail tooltip appears showing a label for the nearest annotated position, making it easy to jump directly to a section in a long list or document. The control implements `IScrollController` and plugs directly into `ScrollPresenter` or `ScrollView`.
+
+## Key features
+
+- `Labels` collection of `AnnotatedScrollBarLabel` items, each pairing content with a scroll offset
+- `DetailLabelRequested` event for dynamic tooltip content generated on demand
+- `LabelTemplate` and `DetailLabelTemplate` for custom label rendering
+- `SmallChange` to configure the step size for increment/decrement button clicks
+- `Scrolling` event that can be cancelled, letting you intercept user scroll gestures
+- Exposes `ScrollController` (`IScrollController`) for wiring to `ScrollPresenter`
+
+## Basic usage
+
+The most common pattern pairs `AnnotatedScrollBar` with a `ScrollView` by connecting `ScrollPresenter`:
+
+```xml
+<Grid>
+    <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="Auto" />
+    </Grid.ColumnDefinitions>
+
+    <ScrollView x:Name="MyScrollView" Grid.Column="0">
+        <ItemsRepeater x:Name="MyRepeater"
+                       ItemsSource="{x:Bind Items}" />
+    </ScrollView>
+
+    <muxc:AnnotatedScrollBar x:Name="MyAnnotatedScrollBar"
+                              Grid.Column="1"
+                              DetailLabelRequested="AnnotatedScrollBar_DetailLabelRequested" />
+</Grid>
+```
+
+Connect the scroll controller in code-behind:
+
+```csharp
+public MainPage()
+{
+    InitializeComponent();
+    MyScrollView.ScrollPresenter.VerticalScrollController =
+        MyAnnotatedScrollBar.ScrollController;
+}
+```
+
+## Properties
+
+<ParamField path="Labels" type="IVector&lt;AnnotatedScrollBarLabel&gt;">
+  Collection of `AnnotatedScrollBarLabel` objects that define the visible tick marks and labels on the bar. Each label has a `Content` (displayed text or element) and a `ScrollOffset` (the pixel offset in the scroll range where the label appears).
+</ParamField>
+
+<ParamField path="LabelTemplate" type="IElementFactory">
+  Custom `DataTemplate` or element factory used to render each label on the bar. When `null`, the `Content` of each `AnnotatedScrollBarLabel` is rendered directly.
+</ParamField>
+
+<ParamField path="DetailLabelTemplate" type="IElementFactory">
+  Custom `DataTemplate` or element factory used to render the hover tooltip. When `null`, the `Content` set on `AnnotatedScrollBarDetailLabelRequestedEventArgs` is rendered directly.
+</ParamField>
+
+<ParamField path="SmallChange" type="double">
+  The scroll distance for a single increment or decrement button click. Default: `16`.
+</ParamField>
+
+<ParamField path="ScrollController" type="IScrollController">
+  The `IScrollController` implementation exposed by this control. Assign to `ScrollPresenter.VerticalScrollController` (or `HorizontalScrollController`) to connect it to a scroller (read-only).
+</ParamField>
+
+## Events
+
+<ParamField path="DetailLabelRequested" type="TypedEventHandler&lt;AnnotatedScrollBar, AnnotatedScrollBarDetailLabelRequestedEventArgs&gt;">
+  Raised when the user hovers over the scroll bar and a detail tooltip needs content. Set `args.Content` to the object you want displayed in the tooltip. `args.ScrollOffset` tells you which position the pointer is over.
+</ParamField>
+
+<ParamField path="Scrolling" type="TypedEventHandler&lt;AnnotatedScrollBar, AnnotatedScrollBarScrollingEventArgs&gt;">
+  Raised when the user clicks, drags, or uses the increment/decrement buttons. `args.ScrollOffset` is the target offset; `args.ScrollingEventKind` is one of `Click`, `Drag`, `IncrementButton`, `DecrementButton`. Set `args.Cancel = true` to prevent the scroll.
+</ParamField>
+
+## AnnotatedScrollBarLabel
+
+`AnnotatedScrollBarLabel` pairs a display value with a position in the scroll range.
+
+```csharp
+// Constructor
+AnnotatedScrollBarLabel(object content, double scrollOffset)
+```
+
+<ParamField path="Content" type="object">
+  The label content displayed on the bar at the specified position. Can be a string or any `UIElement`.
+</ParamField>
+
+<ParamField path="ScrollOffset" type="double">
+  The scroll offset (in pixels) at which this label appears on the bar.
+</ParamField>
+
+## AnnotatedScrollBarDetailLabelRequestedEventArgs
+
+<ParamField path="Content" type="object">
+  Get or set the content to display in the hover tooltip.
+</ParamField>
+
+<ParamField path="ScrollOffset" type="double">
+  The scroll offset the pointer is currently hovering over (read-only).
+</ParamField>
+
+## Advanced usage
+
+### Populating labels from a grouped data source
+
+```csharp
+private void PopulateLabels()
+{
+    var labels = new List<AnnotatedScrollBarLabel>();
+    double itemHeight = 48.0; // estimated item height
+
+    foreach (var group in ContactGroups)
+    {
+        double offset = group.StartIndex * itemHeight;
+        labels.Add(new AnnotatedScrollBarLabel(group.Key, offset));
+    }
+
+    MyAnnotatedScrollBar.Labels = new ObservableCollection<AnnotatedScrollBarLabel>(labels);
+}
+```
+
+### Dynamic detail tooltip
+
+```csharp
+private void AnnotatedScrollBar_DetailLabelRequested(
+    AnnotatedScrollBar sender,
+    AnnotatedScrollBarDetailLabelRequestedEventArgs args)
+{
+    // Find the item closest to the hovered scroll offset
+    int index = (int)(args.ScrollOffset / ItemHeight);
+    if (index >= 0 && index < Items.Count)
+        args.Content = Items[index].GroupHeader;
+}
+```
+
+### Cancelling scroll on restricted range
+
+```csharp
+private void AnnotatedScrollBar_Scrolling(
+    AnnotatedScrollBar sender,
+    AnnotatedScrollBarScrollingEventArgs args)
+{
+    // Prevent scrolling past a locked section
+    if (args.ScrollOffset > MaxAllowedOffset)
+        args.Cancel = true;
+}
+```

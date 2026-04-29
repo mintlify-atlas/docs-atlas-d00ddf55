@@ -1,0 +1,215 @@
+---
+title: "ProgressBar and ProgressRing API reference — WinUI"
+description: "API reference for WinUI ProgressBar and ProgressRing. Show determinate or indeterminate progress with error and paused states for loading feedback."
+---
+
+`ProgressBar` and `ProgressRing` are WinUI controls that give users visual feedback about the progress of an operation. `ProgressBar` renders as a horizontal bar that fills from left to right; `ProgressRing` renders as a circular spinning indicator. Both controls support a **determinate** mode (showing a known percentage) and an **indeterminate** mode (showing that work is happening without a known end point).
+
+## Choosing between ProgressBar and ProgressRing
+
+| | ProgressBar | ProgressRing |
+|---|---|---|
+| Shape | Horizontal bar | Circle |
+| Determinate | Yes | Yes |
+| Indeterminate | Yes | Yes |
+| ShowError / ShowPaused | Yes | No |
+| Inherits from | `RangeBase` | `Control` |
+| Typical use | Page-level operations, file transfer | Button loading state, dialog spinner |
+
+---
+
+## ProgressBar
+
+`ProgressBar` inherits from `RangeBase`, which provides `Minimum`, `Maximum`, and `Value`. Additional properties control indeterminate animation and error/paused visual states.
+
+### Basic usage
+
+<Tabs>
+  <Tab title="Determinate">
+    ```xml
+    <!-- Shows 60% progress -->
+    <muxc:ProgressBar Value="60"
+                      Minimum="0"
+                      Maximum="100" />
+    ```
+  </Tab>
+  <Tab title="Indeterminate">
+    ```xml
+    <!-- Animates continuously while an operation runs -->
+    <muxc:ProgressBar IsIndeterminate="True" />
+    ```
+  </Tab>
+</Tabs>
+
+### Properties
+
+<ParamField path="IsIndeterminate" type="bool" default="false">
+  When `true`, the bar displays a looping animation and ignores `Value`. Set to `false` to show a determinate fill based on `Value`, `Minimum`, and `Maximum`.
+</ParamField>
+
+<ParamField path="Value" type="double" default="0">
+  The current progress value. Must be between `Minimum` and `Maximum`. Ignored when `IsIndeterminate` is `true`. Inherited from `RangeBase`.
+</ParamField>
+
+<ParamField path="Minimum" type="double" default="0">
+  The lower bound of the progress range. Inherited from `RangeBase`.
+</ParamField>
+
+<ParamField path="Maximum" type="double" default="100">
+  The upper bound of the progress range. Inherited from `RangeBase`.
+</ParamField>
+
+<ParamField path="ShowError" type="bool" default="false">
+  When `true`, the bar switches to an error visual state (red color). Use this to indicate that an operation has failed. Mutually exclusive with `ShowPaused`.
+</ParamField>
+
+<ParamField path="ShowPaused" type="bool" default="false">
+  When `true`, the bar switches to a paused visual state (yellow color). Use this to indicate that an operation is paused. Mutually exclusive with `ShowError`.
+</ParamField>
+
+### Advanced usage
+
+#### Binding to an async operation
+
+```xml
+<muxc:ProgressBar x:Name="DownloadProgress"
+                  IsIndeterminate="{x:Bind ViewModel.IsCalculating, Mode=OneWay}"
+                  Value="{x:Bind ViewModel.ProgressPercent, Mode=OneWay}"
+                  ShowError="{x:Bind ViewModel.HasError, Mode=OneWay}"
+                  ShowPaused="{x:Bind ViewModel.IsPaused, Mode=OneWay}" />
+```
+
+#### Updating progress from a background task
+
+```csharp
+private async Task DownloadFileAsync(string url)
+{
+    DownloadProgress.IsIndeterminate = false;
+    DownloadProgress.Value = 0;
+
+    var progress = new Progress<int>(percent =>
+    {
+        DownloadProgress.Value = percent;
+    });
+
+    try
+    {
+        await _downloadService.DownloadAsync(url, progress);
+    }
+    catch (Exception)
+    {
+        DownloadProgress.ShowError = true;
+    }
+}
+```
+
+#### Showing all visual states
+
+```xml
+<!-- Normal determinate -->
+<muxc:ProgressBar Value="40" />
+
+<!-- Error state -->
+<muxc:ProgressBar Value="40" ShowError="True" />
+
+<!-- Paused state -->
+<muxc:ProgressBar Value="40" ShowPaused="True" />
+
+<!-- Indeterminate -->
+<muxc:ProgressBar IsIndeterminate="True" />
+```
+
+---
+
+## ProgressRing
+
+`ProgressRing` renders as a circular indicator. It does not inherit from `RangeBase`; instead it exposes its own `Value`, `Minimum`, and `Maximum` properties directly. It also has an `IsActive` property that starts and stops the indeterminate animation independently of `IsIndeterminate`.
+
+### Basic usage
+
+<Tabs>
+  <Tab title="Indeterminate">
+    ```xml
+    <!-- Spinning indicator — operation running, duration unknown -->
+    <muxc:ProgressRing IsActive="True" IsIndeterminate="True" />
+    ```
+  </Tab>
+  <Tab title="Determinate">
+    ```xml
+    <!-- Ring fills to 75% -->
+    <muxc:ProgressRing IsActive="True"
+                       IsIndeterminate="False"
+                       Value="75"
+                       Minimum="0"
+                       Maximum="100" />
+    ```
+  </Tab>
+</Tabs>
+
+### Properties
+
+<ParamField path="IsActive" type="bool" default="true">
+  Starts (`true`) or stops (`false`) the indeterminate spinning animation. When `false` and `IsIndeterminate` is `true`, the ring is hidden. Has no effect in determinate mode.
+</ParamField>
+
+<ParamField path="IsIndeterminate" type="bool" default="true">
+  When `true`, the ring spins continuously (subject to `IsActive`). When `false`, the ring fills proportionally based on `Value`, `Minimum`, and `Maximum`.
+</ParamField>
+
+<ParamField path="Value" type="double" default="0">
+  The current progress value used in determinate mode. Must be between `Minimum` and `Maximum`.
+</ParamField>
+
+<ParamField path="Minimum" type="double" default="0">
+  The lower bound of the progress range for determinate mode.
+</ParamField>
+
+<ParamField path="Maximum" type="double" default="100">
+  The upper bound of the progress range for determinate mode.
+</ParamField>
+
+### Advanced usage
+
+#### Button with loading state
+
+```xml
+<Grid>
+    <Button x:Name="SubmitButton"
+            Content="Submit"
+            Click="Submit_Click" />
+    <muxc:ProgressRing x:Name="SubmitRing"
+                       IsActive="False"
+                       Width="20" Height="20"
+                       Visibility="Collapsed" />
+</Grid>
+```
+
+```csharp
+private async void Submit_Click(object sender, RoutedEventArgs e)
+{
+    SubmitButton.IsEnabled = false;
+    SubmitRing.Visibility = Visibility.Visible;
+    SubmitRing.IsActive = true;
+
+    await ViewModel.SubmitAsync();
+
+    SubmitRing.IsActive = false;
+    SubmitRing.Visibility = Visibility.Collapsed;
+    SubmitButton.IsEnabled = true;
+}
+```
+
+#### Determinate ring with binding
+
+```xml
+<muxc:ProgressRing IsIndeterminate="False"
+                   IsActive="True"
+                   Width="64" Height="64"
+                   Value="{x:Bind ViewModel.UploadPercent, Mode=OneWay}"
+                   Minimum="0"
+                   Maximum="100" />
+```
+
+<Note>
+  `ProgressRing` does not have `ShowError` or `ShowPaused` properties. To communicate an error state with a ring, replace it with an error icon or use a `ProgressBar` instead.
+</Note>

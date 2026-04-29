@@ -1,0 +1,234 @@
+---
+title: "ItemsView API Reference — WinUI 3 Items Display"
+description: "Full API reference for WinUI ItemsView: Layout, SelectionMode, ItemTemplate, programmatic selection methods, and XAML grid and list layout examples."
+---
+
+ItemsView is a flexible items display control introduced in WinUI 3 (version 5). It renders a collection of data items using a pluggable `Layout` and a built-in `ScrollView`, making it suitable for grids, lists, and flowing galleries. Unlike `ListView` and `GridView`, ItemsView gives you direct control over layout through the `Layout` property and ships with modern layouts such as `UniformGridLayout` and `LinedFlowLayout` that adapt well to variable-width containers.
+
+## Key features
+
+- Pluggable layout via the `Layout` property (`StackLayout`, `UniformGridLayout`, `LinedFlowLayout`, and custom layouts)
+- Built-in `ScrollView` exposed as a property for scroll position control
+- Four selection modes: `None`, `Single`, `Multiple`, and `Extended`
+- Programmatic selection API: `Select`, `Deselect`, `SelectAll`, `DeselectAll`, `InvertSelection`
+- `IsItemInvokedEnabled` to separately control click/tap invocation from selection
+- `ItemTransitionProvider` for item add/remove animations
+- `StartBringItemIntoView` for scrolling a specific item into the viewport
+
+## Basic usage
+
+<Tabs>
+  <Tab title="XAML">
+```xml
+<ItemsView ItemsSource="{x:Bind ViewModel.Photos}"
+           SelectionMode="Single"
+           ItemInvoked="PhotosView_ItemInvoked">
+    <ItemsView.Layout>
+        <UniformGridLayout MinItemWidth="160"
+                           MinItemHeight="160"
+                           MinRowSpacing="8"
+                           MinColumnSpacing="8" />
+    </ItemsView.Layout>
+    <ItemsView.ItemTemplate>
+        <DataTemplate x:DataType="local:Photo">
+            <Image Source="{x:Bind Thumbnail}"
+                   Stretch="UniformToFill" />
+        </DataTemplate>
+    </ItemsView.ItemTemplate>
+</ItemsView>
+```
+  </Tab>
+  <Tab title="C#">
+```csharp
+private void PhotosView_ItemInvoked(ItemsView sender,
+    ItemsViewItemInvokedEventArgs args)
+{
+    if (args.InvokedItem is Photo photo)
+        Frame.Navigate(typeof(PhotoDetailPage), photo);
+}
+```
+  </Tab>
+</Tabs>
+
+## Properties
+
+<ParamField path="ItemsSource" type="Object">
+  The data source that populates the control. Accepts any `IEnumerable`, `IObservableVector`, or `IBindableVector` implementation. Changes to an `ObservableCollection` are reflected automatically.
+</ParamField>
+
+<ParamField path="ItemTemplate" type="IElementFactory">
+  The template used to render each item. Accepts a `DataTemplate` or a `DataTemplateSelector` (both implement `IElementFactory`). Define the visual appearance of each item in this template.
+</ParamField>
+
+<ParamField path="Layout" type="Layout">
+  The layout algorithm that positions items inside the `ScrollView`. Common built-in options:
+
+  | Layout | Description |
+  |---|---|
+  | `StackLayout` | Single-column or single-row list, similar to `ListView` |
+  | `UniformGridLayout` | Fixed-size grid that wraps across rows |
+  | `LinedFlowLayout` | Variable-width items arranged in lines, ideal for media galleries |
+</ParamField>
+
+<ParamField path="SelectionMode" type="ItemsViewSelectionMode" default="Single">
+  Controls how many items can be selected. Accepted values:
+
+  | Value | Behavior |
+  |---|---|
+  | `None` | No items can be selected |
+  | `Single` | One item at a time |
+  | `Multiple` | Multiple items toggled individually |
+  | `Extended` | Range selection via Shift+click; multiple items with Ctrl+click |
+</ParamField>
+
+<ParamField path="IsItemInvokedEnabled" type="Boolean" default="false">
+  When `true`, tapping or clicking an item raises `ItemInvoked` regardless of `SelectionMode`. When `false`, `ItemInvoked` is not raised.
+</ParamField>
+
+<ParamField path="SelectedItem" type="Object">
+  Read-only. The most recently selected item. Use the programmatic selection methods to change selection.
+</ParamField>
+
+<ParamField path="SelectedItems" type="IVectorView&lt;Object&gt;">
+  Read-only. All currently selected items. Use `SelectAll()`, `Select(index)`, or `Deselect(index)` to modify selection programmatically.
+</ParamField>
+
+<ParamField path="CurrentItemIndex" type="Int32" default="-1">
+  Read-only. The index of the current item (the item with keyboard focus within the control). Returns `-1` when no item is current.
+</ParamField>
+
+<ParamField path="ScrollView" type="ScrollView">
+  Read-only. The `ScrollView` that wraps the item panel. Use this to read scroll offset, listen to scroll events, or call `ScrollTo`.
+</ParamField>
+
+<ParamField path="VerticalScrollController" type="IScrollController">
+  An external scroll controller that drives vertical scrolling. Use this to synchronize ItemsView scrolling with a custom scroll bar or another scrollable control.
+</ParamField>
+
+<ParamField path="ItemTransitionProvider" type="ItemCollectionTransitionProvider">
+  Provides animated transitions when items are added, removed, or moved in the collection.
+</ParamField>
+
+## Events
+
+<ParamField path="ItemInvoked" type="TypedEventHandler&lt;ItemsView, ItemsViewItemInvokedEventArgs&gt;">
+  Fires when the user clicks or taps an item and `IsItemInvokedEnabled` is `true`. The args expose `InvokedItem` (the data object).
+</ParamField>
+
+<ParamField path="SelectionChanged" type="TypedEventHandler&lt;ItemsView, ItemsViewSelectionChangedEventArgs&gt;">
+  Fires when the selection changes, either by user interaction or programmatic calls to `Select`, `Deselect`, `SelectAll`, etc.
+</ParamField>
+
+## Methods
+
+| Method | Signature | Description |
+|---|---|---|
+| `Select` | `Select(Int32 itemIndex)` | Adds the item at the given index to the selection. |
+| `Deselect` | `Deselect(Int32 itemIndex)` | Removes the item at the given index from the selection. |
+| `IsSelected` | `IsSelected(Int32 itemIndex) → Boolean` | Returns `true` if the item at the given index is selected. |
+| `SelectAll` | `SelectAll()` | Selects all items. Only valid in `Multiple` or `Extended` mode. |
+| `DeselectAll` | `DeselectAll()` | Clears the entire selection. |
+| `InvertSelection` | `InvertSelection()` | Deselects all selected items and selects all unselected items. |
+| `StartBringItemIntoView` | `StartBringItemIntoView(Int32 index, BringIntoViewOptions options)` | Scrolls the item at `index` into the visible viewport with optional animation and alignment control. |
+| `TryGetItemIndex` | `TryGetItemIndex(Double hRatio, Double vRatio, out Int32 index) → Boolean` | Returns the index of the item at the given normalized viewport position. |
+
+## Advanced examples
+
+### UniformGridLayout gallery
+
+```xml
+<ItemsView ItemsSource="{x:Bind ViewModel.Images}"
+           SelectionMode="Multiple"
+           IsItemInvokedEnabled="True"
+           ItemInvoked="Gallery_ItemInvoked"
+           SelectionChanged="Gallery_SelectionChanged">
+    <ItemsView.Layout>
+        <UniformGridLayout MinItemWidth="200"
+                           MinItemHeight="200"
+                           MinRowSpacing="12"
+                           MinColumnSpacing="12"
+                           ItemsJustification="SpaceEvenly" />
+    </ItemsView.Layout>
+    <ItemsView.ItemTemplate>
+        <DataTemplate x:DataType="local:ImageItem">
+            <Grid CornerRadius="8" Padding="4">
+                <Image Source="{x:Bind Thumbnail}" Stretch="UniformToFill" />
+                <TextBlock Text="{x:Bind Caption}"
+                           VerticalAlignment="Bottom"
+                           Style="{ThemeResource CaptionTextBlockStyle}" />
+            </Grid>
+        </DataTemplate>
+    </ItemsView.ItemTemplate>
+</ItemsView>
+```
+
+### LinedFlowLayout for variable-width items
+
+```xml
+<ItemsView ItemsSource="{x:Bind ViewModel.Articles}"
+           SelectionMode="Single">
+    <ItemsView.Layout>
+        <LinedFlowLayout LineHeight="120"
+                         LineSpacing="8"
+                         MinItemSpacing="8" />
+    </ItemsView.Layout>
+    <ItemsView.ItemTemplate>
+        <DataTemplate x:DataType="local:Article">
+            <Grid Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                  CornerRadius="4"
+                  Padding="12">
+                <TextBlock Text="{x:Bind Title}"
+                           Style="{ThemeResource BodyStrongTextBlockStyle}" />
+            </Grid>
+        </DataTemplate>
+    </ItemsView.ItemTemplate>
+</ItemsView>
+```
+
+### Programmatic selection and scroll
+
+```csharp
+// Select the third item
+PhotosView.Select(2);
+
+// Scroll item 50 into view at the center of the viewport
+PhotosView.StartBringItemIntoView(50, new BringIntoViewOptions
+{
+    AnimationDesired = true,
+    VerticalAlignmentRatio = 0.5
+});
+
+// Invert selection (select all unselected items)
+PhotosView.InvertSelection();
+```
+
+### Reacting to selection changes
+
+```csharp
+private void Gallery_SelectionChanged(ItemsView sender,
+    ItemsViewSelectionChangedEventArgs args)
+{
+    int count = sender.SelectedItems.Count;
+    StatusText.Text = count == 0
+        ? "No items selected"
+        : $"{count} item{(count == 1 ? "" : "s")} selected";
+}
+```
+
+## Notes
+
+<Note>
+  ItemsView was introduced in WinUI 3 version 5 (Windows App SDK 1.4). It is not available in earlier versions.
+</Note>
+
+<Tip>
+  Use `UniformGridLayout` when all items are the same size. Use `LinedFlowLayout` when items have variable widths, such as photos or cards with varying text. Use `StackLayout` to replicate a standard vertical or horizontal list.
+</Tip>
+
+<Tip>
+  Enable `IsItemInvokedEnabled` when you want click/tap to trigger an action (such as navigation) independently of whether the item becomes selected. You can use both `ItemInvoked` and `SelectionChanged` at the same time.
+</Tip>
+
+<Warning>
+  `SelectedItems` is a read-only snapshot. Do not attempt to modify it directly. Use `Select(index)`, `Deselect(index)`, `SelectAll()`, or `DeselectAll()` to change selection programmatically.
+</Warning>

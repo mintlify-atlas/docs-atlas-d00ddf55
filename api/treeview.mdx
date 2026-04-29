@@ -1,0 +1,274 @@
+---
+title: "TreeView API Reference — WinUI 3 Hierarchical List"
+description: "Full API reference for WinUI TreeView: RootNodes, ItemsSource binding, SelectionMode, drag-and-drop, lazy loading, and XAML and C# usage examples."
+---
+
+TreeView is a hierarchical list control that presents data in an expandable tree structure. Each item can contain child items, represented visually with an expand/collapse chevron. TreeView supports two population models: a programmatic `RootNodes` approach using `TreeViewNode` objects, and a data-binding approach using `ItemsSource` with flat or hierarchical data. The control supports single selection, multi-selection with checkboxes, and no selection.
+
+## Key features
+
+- Two population modes: `RootNodes` (programmatic) and `ItemsSource` (data binding)
+- `SelectionMode` supporting `None`, `Single`, and `Multiple` (checkbox) selection
+- Drag-and-drop reordering with `CanDragItems` and `CanReorderItems`
+- Programmatic expand/collapse via `Expand()` and `Collapse()` methods, or `IsExpanded`
+- `HasUnrealizedChildren` for lazy-loading child nodes on demand
+- `ItemInvoked`, `Expanding`, `Collapsed`, and `SelectionChanged` events
+- Customizable item appearance via `ItemTemplate` and `ItemContainerStyle`
+
+## Basic usage
+
+### Programmatic RootNodes
+
+<Tabs>
+  <Tab title="XAML">
+```xml
+<TreeView x:Name="FileTree"
+          SelectionMode="Single"
+          ItemInvoked="FileTree_ItemInvoked" />
+```
+  </Tab>
+  <Tab title="C#">
+```csharp
+private void Page_Loaded(object sender, RoutedEventArgs e)
+{
+    var rootNode = new TreeViewNode { Content = "Documents" };
+
+    var reportsNode = new TreeViewNode { Content = "Reports" };
+    reportsNode.Children.Add(new TreeViewNode { Content = "Q1 Report.xlsx" });
+    reportsNode.Children.Add(new TreeViewNode { Content = "Q2 Report.xlsx" });
+
+    rootNode.Children.Add(reportsNode);
+    rootNode.Children.Add(new TreeViewNode { Content = "Resume.docx" });
+
+    FileTree.RootNodes.Add(rootNode);
+}
+
+private void FileTree_ItemInvoked(TreeView sender,
+    TreeViewItemInvokedEventArgs args)
+{
+    var node = args.InvokedItem as TreeViewNode;
+    // Navigate or open the selected item
+}
+```
+  </Tab>
+</Tabs>
+
+### Data-bound with ItemsSource
+
+<Tabs>
+  <Tab title="XAML">
+```xml
+<TreeView ItemsSource="{x:Bind ViewModel.Categories}"
+          SelectionMode="Single"
+          ItemInvoked="CategoryTree_ItemInvoked">
+    <TreeView.ItemTemplate>
+        <DataTemplate x:DataType="local:Category">
+            <TreeViewItem ItemsSource="{x:Bind SubCategories}"
+                          Content="{x:Bind Name}" />
+        </DataTemplate>
+    </TreeView.ItemTemplate>
+</TreeView>
+```
+  </Tab>
+  <Tab title="C#">
+```csharp
+public class Category
+{
+    public string Name { get; set; }
+    public ObservableCollection<Category> SubCategories { get; set; } = new();
+}
+```
+  </Tab>
+</Tabs>
+
+## Properties
+
+<ParamField path="RootNodes" type="IVector&lt;TreeViewNode&gt;">
+  The top-level nodes in the tree when using the programmatic population model. Read-only; add and remove `TreeViewNode` objects directly on this collection. Do not combine with `ItemsSource`.
+</ParamField>
+
+<ParamField path="ItemsSource" type="Object">
+  A data source for the tree when using data binding. Set `ItemTemplate` to a `DataTemplate` containing a `TreeViewItem` that specifies its own `ItemsSource` for nested children. Do not combine with `RootNodes`.
+</ParamField>
+
+<ParamField path="SelectionMode" type="TreeViewSelectionMode" default="Single">
+  Controls how items can be selected. Accepted values:
+
+  | Value | Behavior |
+  |---|---|
+  | `None` | Items cannot be selected |
+  | `Single` | One item can be selected at a time |
+  | `Multiple` | Multiple items can be selected; checkboxes are shown |
+</ParamField>
+
+<ParamField path="SelectedItem" type="Object">
+  The currently selected item (data object or `TreeViewNode`). Setting this programmatically updates the visual selection state.
+</ParamField>
+
+<ParamField path="SelectedItems" type="IVector&lt;Object&gt;">
+  The collection of all currently selected items. Use this in `Multiple` selection mode.
+</ParamField>
+
+<ParamField path="SelectedNode" type="TreeViewNode">
+  The currently selected `TreeViewNode` when using the `RootNodes` population model.
+</ParamField>
+
+<ParamField path="SelectedNodes" type="IVector&lt;TreeViewNode&gt;">
+  The collection of all selected `TreeViewNode` objects. Applies to the `RootNodes` model.
+</ParamField>
+
+<ParamField path="CanDragItems" type="Boolean" default="true">
+  Whether items can be dragged from the tree. When `true`, the `DragItemsStarting` and `DragItemsCompleted` events fire.
+</ParamField>
+
+<ParamField path="CanReorderItems" type="Boolean" default="true">
+  Whether items can be dropped onto a new position within the tree, reordering the hierarchy.
+</ParamField>
+
+<ParamField path="ItemTemplate" type="DataTemplate">
+  A `DataTemplate` used to render each tree item. When using `ItemsSource`, include a `TreeViewItem` in the template and set its `ItemsSource` to the nested children property.
+</ParamField>
+
+<ParamField path="ItemTemplateSelector" type="DataTemplateSelector">
+  A `DataTemplateSelector` for choosing a template per item type.
+</ParamField>
+
+<ParamField path="ItemContainerStyle" type="Style">
+  A `Style` targeting `TreeViewItem` applied to every item container.
+</ParamField>
+
+<ParamField path="ItemContainerStyleSelector" type="StyleSelector">
+  A `StyleSelector` for choosing a container style per item.
+</ParamField>
+
+<ParamField path="ItemContainerTransitions" type="TransitionCollection">
+  Transitions applied to `TreeViewItem` containers when items are added or removed.
+</ParamField>
+
+## Events
+
+<ParamField path="ItemInvoked" type="TypedEventHandler&lt;TreeView, TreeViewItemInvokedEventArgs&gt;">
+  Fires when the user clicks or activates an item. The args expose `InvokedItem` (the data object or `TreeViewNode`) and `Handled`. Set `Handled = true` to suppress default expand/collapse behaviour.
+</ParamField>
+
+<ParamField path="SelectionChanged" type="TypedEventHandler&lt;TreeView, TreeViewSelectionChangedEventArgs&gt;">
+  Fires when the selection changes. The args expose `AddedItems` and `RemovedItems`.
+</ParamField>
+
+<ParamField path="Expanding" type="TypedEventHandler&lt;TreeView, TreeViewExpandingEventArgs&gt;">
+  Fires just before a node expands. The args expose `Node` (`TreeViewNode`) and `Item` (data object). Use this to lazily populate `HasUnrealizedChildren` nodes.
+</ParamField>
+
+<ParamField path="Collapsed" type="TypedEventHandler&lt;TreeView, TreeViewCollapsedEventArgs&gt;">
+  Fires after a node collapses. The args expose `Node` and `Item`.
+</ParamField>
+
+<ParamField path="DragItemsStarting" type="TypedEventHandler&lt;TreeView, TreeViewDragItemsStartingEventArgs&gt;">
+  Fires when a drag operation begins. Set `Cancel = true` to prevent dragging. Use `Data` to populate the drag package.
+</ParamField>
+
+<ParamField path="DragItemsCompleted" type="TypedEventHandler&lt;TreeView, TreeViewDragItemsCompletedEventArgs&gt;">
+  Fires when a drag operation ends. `DropResult` indicates the outcome. `NewParentItem` identifies the node the items were dropped onto.
+</ParamField>
+
+## Methods
+
+| Method | Description |
+|---|---|
+| `Expand(TreeViewNode)` | Programmatically expands the given node. |
+| `Collapse(TreeViewNode)` | Programmatically collapses the given node. |
+| `SelectAll()` | Selects all items in `Multiple` selection mode. |
+| `NodeFromContainer(DependencyObject)` | Returns the `TreeViewNode` for a given container element. |
+| `ContainerFromNode(TreeViewNode)` | Returns the container element for a given `TreeViewNode`. |
+| `ItemFromContainer(DependencyObject)` | Returns the data item for a given container element. |
+| `ContainerFromItem(Object)` | Returns the container element for a given data item. |
+
+## TreeViewNode
+
+`TreeViewNode` is the node object used in the `RootNodes` population model.
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `Content` | `Object` | — | The data object or display content for this node. |
+| `Children` | `IVector<TreeViewNode>` | — | Child nodes. Add children here to create nested items. |
+| `IsExpanded` | `Boolean` | `false` | Whether the node is currently expanded. |
+| `HasChildren` | `Boolean` | — | Read-only. `true` when `Children` is non-empty or `HasUnrealizedChildren` is `true`. |
+| `HasUnrealizedChildren` | `Boolean` | `false` | Set to `true` to show the expand chevron before children are loaded. Populate `Children` and set to `false` in the `Expanding` event handler. |
+| `Parent` | `TreeViewNode` | — | Read-only reference to the parent node. |
+| `Depth` | `Int32` | `-1` | Read-only depth of the node in the hierarchy, starting at `0` for root nodes. |
+
+## Advanced examples
+
+### Lazy-loading with HasUnrealizedChildren
+
+<Tabs>
+  <Tab title="XAML">
+```xml
+<TreeView x:Name="LazyTree"
+          Expanding="LazyTree_Expanding" />
+```
+  </Tab>
+  <Tab title="C#">
+```csharp
+private void Page_Loaded(object sender, RoutedEventArgs e)
+{
+    var driveNode = new TreeViewNode
+    {
+        Content = "C:\\",
+        HasUnrealizedChildren = true
+    };
+    LazyTree.RootNodes.Add(driveNode);
+}
+
+private async void LazyTree_Expanding(TreeView sender,
+    TreeViewExpandingEventArgs args)
+{
+    var node = args.Node;
+    if (node.HasUnrealizedChildren)
+    {
+        // Load children asynchronously
+        var children = await LoadChildrenAsync(node.Content.ToString());
+        foreach (var child in children)
+            node.Children.Add(new TreeViewNode { Content = child, HasUnrealizedChildren = true });
+        node.HasUnrealizedChildren = false;
+    }
+}
+```
+  </Tab>
+</Tabs>
+
+### Multiple selection
+
+```xml
+<TreeView SelectionMode="Multiple"
+          SelectionChanged="Tree_SelectionChanged">
+    <TreeView.RootNodes>
+        <!-- Nodes added programmatically -->
+    </TreeView.RootNodes>
+</TreeView>
+```
+
+```csharp
+private void Tree_SelectionChanged(TreeView sender,
+    TreeViewSelectionChangedEventArgs args)
+{
+    foreach (var item in args.AddedItems)
+        Debug.WriteLine($"Selected: {item}");
+    foreach (var item in args.RemovedItems)
+        Debug.WriteLine($"Deselected: {item}");
+}
+```
+
+## Notes
+
+<Note>
+  The `RootNodes` model and `ItemsSource` model are mutually exclusive. Choose one approach for a given `TreeView` instance and do not set both.
+</Note>
+
+<Tip>
+  Use `HasUnrealizedChildren = true` for file-system or remote-data trees where loading all children upfront is too expensive. Populate children in the `Expanding` event handler, then set `HasUnrealizedChildren = false` to remove the expand chevron if the node turns out to be empty.
+</Tip>
+
+<Tip>
+  When using `ItemsSource` with hierarchical data, the `TreeViewItem` in your `DataTemplate` must bind its own `ItemsSource` to the nested children property. The outer `TreeView.ItemsSource` only provides the root-level items.
+</Tip>

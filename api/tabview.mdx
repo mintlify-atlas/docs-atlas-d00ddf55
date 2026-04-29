@@ -1,0 +1,305 @@
+---
+title: "TabView API Reference — WinUI 3 Tab Strip Control"
+description: "Full API reference for WinUI TabView: properties, events, tab dragging, close handling, tear-out windows, and XAML and C# multi-document tab examples."
+---
+
+TabView is a multi-document tab strip control that lets users manage several open documents or content areas within a single window, in a style consistent with modern browsers and editors. Each tab is represented by a `TabViewItem` that contains a header, an optional icon, and a close button. Tabs can be reordered by dragging, removed with the close button, and added via the built-in add-tab button.
+
+## Key features
+
+- `Equal`, `SizeToContent`, and `Compact` tab width modes
+- Built-in add-tab button with `AddTabButtonClick` event
+- Per-tab close buttons with `TabCloseRequested` event
+- Drag-and-drop reordering with `CanReorderTabs` and `CanDragTabs`
+- Tab tear-out to new windows via `CanTearOutTabs` (WinUI 3 v7+)
+- Data-bound tabs via `TabItemsSource` and `TabItemTemplate`
+- Header and footer areas adjacent to the tab strip
+
+## Basic usage
+
+<Tabs>
+  <Tab title="XAML">
+```xml
+<TabView x:Name="TabViewControl"
+         AddTabButtonClick="TabView_AddTabButtonClick"
+         TabCloseRequested="TabView_TabCloseRequested">
+    <TabViewItem Header="Document 1" IsClosable="True">
+        <TextBlock Text="Content of Document 1" Margin="16" />
+    </TabViewItem>
+    <TabViewItem Header="Document 2" IsClosable="True">
+        <TextBlock Text="Content of Document 2" Margin="16" />
+    </TabViewItem>
+</TabView>
+```
+  </Tab>
+  <Tab title="C#">
+```csharp
+private void TabView_AddTabButtonClick(TabView sender, object args)
+{
+    var newTab = new TabViewItem
+    {
+        Header = $"Document {sender.TabItems.Count + 1}",
+        IsClosable = true,
+        Content = new TextBlock { Text = "New document content", Margin = new Thickness(16) }
+    };
+    sender.TabItems.Add(newTab);
+    sender.SelectedItem = newTab;
+}
+
+private void TabView_TabCloseRequested(TabView sender,
+    TabViewTabCloseRequestedEventArgs args)
+{
+    sender.TabItems.Remove(args.Tab);
+}
+```
+  </Tab>
+</Tabs>
+
+## Properties
+
+<ParamField path="TabItems" type="IVector&lt;Object&gt;">
+  The collection of `TabViewItem` objects shown in the tab strip. Read-only; add and remove tabs directly on this collection. Mutually exclusive with `TabItemsSource`.
+</ParamField>
+
+<ParamField path="TabItemsSource" type="Object">
+  A data source for generating tabs. Pair with `TabItemTemplate` or `TabItemTemplateSelector` to control how each data object is rendered as a `TabViewItem`.
+</ParamField>
+
+<ParamField path="TabItemTemplate" type="DataTemplate">
+  A `DataTemplate` used to generate `TabViewItem` containers from `TabItemsSource`.
+</ParamField>
+
+<ParamField path="TabItemTemplateSelector" type="DataTemplateSelector">
+  A `DataTemplateSelector` for choosing a template per item when the tab strip is data-bound.
+</ParamField>
+
+<ParamField path="SelectedIndex" type="Int32" default="0">
+  Zero-based index of the currently selected tab. Change this to select a tab programmatically.
+</ParamField>
+
+<ParamField path="SelectedItem" type="Object">
+  The currently selected tab item. Set to a `TabViewItem` reference or a data object from `TabItemsSource` to change selection.
+</ParamField>
+
+<ParamField path="TabWidthMode" type="TabViewWidthMode" default="Equal">
+  Controls how tab width is calculated. Accepted values:
+
+  | Value | Behavior |
+  |---|---|
+  | `Equal` | All tabs share the available strip width equally |
+  | `SizeToContent` | Each tab sizes to fit its header content |
+  | `Compact` | Unselected tabs show only their icon; the selected tab shows the full header |
+</ParamField>
+
+<ParamField path="CloseButtonOverlayMode" type="TabViewCloseButtonOverlayMode" default="Auto">
+  Controls when close buttons are shown on unselected tabs. `Auto` uses the system default. `OnPointerOver` shows the button only when the pointer is over the tab. `Always` shows close buttons on all tabs at all times.
+</ParamField>
+
+<ParamField path="IsAddTabButtonVisible" type="Boolean" default="true">
+  Whether the "+" add-tab button is shown at the end of the tab strip.
+</ParamField>
+
+<ParamField path="AddTabButtonCommand" type="ICommand">
+  An `ICommand` invoked when the add-tab button is clicked. Alternative to handling `AddTabButtonClick` directly.
+</ParamField>
+
+<ParamField path="AddTabButtonCommandParameter" type="Object">
+  The parameter passed to `AddTabButtonCommand` when it is invoked.
+</ParamField>
+
+<ParamField path="CanDragTabs" type="Boolean" default="false">
+  Whether tabs can be dragged out of the strip or to a different position within the strip.
+</ParamField>
+
+<ParamField path="CanReorderTabs" type="Boolean" default="true">
+  Whether the user can drag tabs to reorder them within the strip.
+</ParamField>
+
+<ParamField path="AllowDropTabs" type="Boolean" default="true">
+  Whether external items or tabs dragged from other windows can be dropped onto the tab strip.
+</ParamField>
+
+<ParamField path="CanTearOutTabs" type="Boolean" default="false">
+  Enables the tab tear-out feature (WinUI 3 v7+). When `true`, users can drag a tab outside the strip to create a new window. Handle `TabTearOutWindowRequested` to create the window.
+</ParamField>
+
+<ParamField path="TabStripHeader" type="Object">
+  Content placed to the left of the tab strip, before the first tab. Useful for a window icon or application menu.
+</ParamField>
+
+<ParamField path="TabStripHeaderTemplate" type="DataTemplate">
+  `DataTemplate` used to render `TabStripHeader`.
+</ParamField>
+
+<ParamField path="TabStripFooter" type="Object">
+  Content placed to the right of the add-tab button, after the last tab.
+</ParamField>
+
+<ParamField path="TabStripFooterTemplate" type="DataTemplate">
+  `DataTemplate` used to render `TabStripFooter`.
+</ParamField>
+
+## Events
+
+<ParamField path="TabCloseRequested" type="TypedEventHandler&lt;TabView, TabViewTabCloseRequestedEventArgs&gt;">
+  Fires when the user clicks a tab's close button or presses **Ctrl+W** on the selected tab. The event args expose `Tab` (the `TabViewItem`) and `Item` (the underlying data object). You must remove the tab from `TabItems` manually in the handler.
+</ParamField>
+
+<ParamField path="AddTabButtonClick" type="TypedEventHandler&lt;TabView, Object&gt;">
+  Fires when the user clicks the "+" add-tab button. Create and add a new `TabViewItem` to `TabItems` in this handler.
+</ParamField>
+
+<ParamField path="SelectionChanged" type="SelectionChangedEventHandler">
+  Fires when the selected tab changes. The `SelectionChangedEventArgs` provide `AddedItems` and `RemovedItems`.
+</ParamField>
+
+<ParamField path="TabItemsChanged" type="TypedEventHandler&lt;TabView, IVectorChangedEventArgs&gt;">
+  Fires when the `TabItems` collection changes (tabs are added or removed).
+</ParamField>
+
+<ParamField path="TabDroppedOutside" type="TypedEventHandler&lt;TabView, TabViewTabDroppedOutsideEventArgs&gt;">
+  Fires when a tab is dragged and dropped outside the tab strip bounds and no valid drop target accepted it. Use this to open a new window when `CanDragTabs` is `true` and `CanTearOutTabs` is `false`.
+</ParamField>
+
+<ParamField path="TabDragStarting" type="TypedEventHandler&lt;TabView, TabViewTabDragStartingEventArgs&gt;">
+  Fires when a tab drag operation begins. Set `Cancel = true` to prevent dragging. Use `Data` to populate the drag package with custom data.
+</ParamField>
+
+<ParamField path="TabDragCompleted" type="TypedEventHandler&lt;TabView, TabViewTabDragCompletedEventArgs&gt;">
+  Fires when a tab drag operation ends. `DropResult` indicates how the drag completed.
+</ParamField>
+
+<ParamField path="TabTearOutWindowRequested" type="TypedEventHandler&lt;TabView, TabViewTabTearOutWindowRequestedEventArgs&gt;">
+  Fires (WinUI 3 v7+) when the user starts dragging a tab to tear it out. Set `NewWindowId` on the args to specify which window should host the torn-out tab.
+</ParamField>
+
+<ParamField path="TabTearOutRequested" type="TypedEventHandler&lt;TabView, TabViewTabTearOutRequestedEventArgs&gt;">
+  Fires (WinUI 3 v7+) after `TabTearOutWindowRequested`, once the target window ID is known. Move the tab's content into the new window here.
+</ParamField>
+
+<ParamField path="ExternalTornOutTabsDropping" type="TypedEventHandler&lt;TabView, TabViewExternalTornOutTabsDroppingEventArgs&gt;">
+  Fires (WinUI 3 v7+) when tabs torn out from another window are being dragged over this TabView. Set `AllowDrop = true` to accept them.
+</ParamField>
+
+<ParamField path="ExternalTornOutTabsDropped" type="TypedEventHandler&lt;TabView, TabViewExternalTornOutTabsDroppedEventArgs&gt;">
+  Fires (WinUI 3 v7+) when externally torn-out tabs have been dropped onto this TabView. Insert the items at `DropIndex`.
+</ParamField>
+
+<ParamField path="TabStripDragOver" type="DragEventHandler">
+  Standard `DragOver` event for the tab strip area. Use to customize drag-over feedback.
+</ParamField>
+
+<ParamField path="TabStripDrop" type="DragEventHandler">
+  Standard `Drop` event for the tab strip area. Fires when an item is dropped onto the strip.
+</ParamField>
+
+## Methods
+
+| Method | Description |
+|---|---|
+| `ContainerFromItem(Object)` | Returns the `TabViewItem` container for a given data item. |
+| `ContainerFromIndex(Int32)` | Returns the `TabViewItem` container at the given index. |
+
+## TabViewItem properties
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `Header` | `Object` | — | The tab label content. |
+| `HeaderTemplate` | `DataTemplate` | — | `DataTemplate` for the `Header`. |
+| `IconSource` | `IconSource` | — | Icon displayed in the tab alongside the header. |
+| `IsClosable` | `Boolean` | `true` | Whether the tab shows a close button. |
+
+## Advanced examples
+
+### Data-bound tabs
+
+<Tabs>
+  <Tab title="XAML">
+```xml
+<TabView TabItemsSource="{x:Bind ViewModel.OpenDocuments}"
+         SelectedItem="{x:Bind ViewModel.ActiveDocument, Mode=TwoWay}"
+         AddTabButtonClick="TabView_AddTabButtonClick"
+         TabCloseRequested="TabView_TabCloseRequested">
+    <TabView.TabItemTemplate>
+        <DataTemplate x:DataType="local:Document">
+            <TabViewItem Header="{x:Bind Title}"
+                         IsClosable="True">
+                <local:DocumentEditorView Document="{x:Bind}" />
+            </TabViewItem>
+        </DataTemplate>
+    </TabView.TabItemTemplate>
+</TabView>
+```
+  </Tab>
+  <Tab title="C#">
+```csharp
+private void TabView_AddTabButtonClick(TabView sender, object args)
+{
+    ViewModel.OpenDocuments.Add(new Document
+    {
+        Title = $"Untitled {ViewModel.OpenDocuments.Count + 1}"
+    });
+}
+
+private void TabView_TabCloseRequested(TabView sender,
+    TabViewTabCloseRequestedEventArgs args)
+{
+    if (args.Item is Document doc)
+        ViewModel.OpenDocuments.Remove(doc);
+}
+```
+  </Tab>
+</Tabs>
+
+### Compact tab width with icons
+
+```xml
+<TabView TabWidthMode="Compact">
+    <TabViewItem Header="Home">
+        <TabViewItem.IconSource>
+            <SymbolIconSource Symbol="Home" />
+        </TabViewItem.IconSource>
+        <TextBlock Text="Home content" Margin="16" />
+    </TabViewItem>
+    <TabViewItem Header="Mail">
+        <TabViewItem.IconSource>
+            <SymbolIconSource Symbol="Mail" />
+        </TabViewItem.IconSource>
+        <TextBlock Text="Mail content" Margin="16" />
+    </TabViewItem>
+</TabView>
+```
+
+### Tab tear-out to a new window (WinUI 3 v7+)
+
+```csharp
+private void TabView_TabTearOutWindowRequested(TabView sender,
+    TabViewTabTearOutWindowRequestedEventArgs args)
+{
+    // Create a new AppWindow to host the torn-out tab
+    var newWindow = new Window();
+    newWindow.Activate();
+    args.NewWindowId = newWindow.AppWindow.Id;
+}
+
+private void TabView_TabTearOutRequested(TabView sender,
+    TabViewTabTearOutRequestedEventArgs args)
+{
+    // Move the torn-out content into the new window
+    // args.Items contains the data objects; args.Tabs contains the TabViewItems
+}
+```
+
+## Notes
+
+<Note>
+  TabView does not automatically remove a tab when the close button is clicked. You must handle `TabCloseRequested` and call `TabItems.Remove(args.Tab)` (or remove the data object from your source collection if using `TabItemsSource`).
+</Note>
+
+<Tip>
+  Set `TabWidthMode="Compact"` when displaying many tabs simultaneously. Unselected tabs shrink to show only their icon, maximising the space available for the selected tab's header.
+</Tip>
+
+<Warning>
+  `CanTearOutTabs` requires WinUI 3 version 7 or later. Check your Windows App SDK package version before using this feature.
+</Warning>

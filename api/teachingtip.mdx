@@ -1,0 +1,218 @@
+---
+title: "TeachingTip control API reference — WinUI"
+description: "API reference for WinUI TeachingTip. Show contextual onboarding callouts anchored to UI elements with configurable placement and dismissal buttons."
+---
+
+`TeachingTip` is a WinUI flyout-style control used to guide users through new features or infrequently used UI elements. It displays a rich callout anchored to a target element, with a title, subtitle, hero image, action button, and close button. Unlike a tooltip, a `TeachingTip` stays open until the user explicitly dismisses it or your code sets `IsOpen` to `false`, making it suitable for onboarding flows and feature discovery.
+
+## Key features
+
+- Anchors to any `FrameworkElement` via the `Target` property; centers on the page when no target is set
+- Fourteen `PreferredPlacement` modes with automatic fallback when space is constrained
+- Optional tail pointer that visually connects the callout to the target element
+- `HeroContent` slot for a top or bottom image strip
+- `ActionButtonContent` and `CloseButtonContent` for customizing button labels
+- Light-dismiss mode (`IsLightDismissEnabled`) for click-outside dismissal
+- `ShouldConstrainToRootBounds` to keep the tip inside the window
+- `Closing` event with cancellation and deferral support
+
+## Basic usage
+
+```xml
+<!-- Target element the tip will point to -->
+<Button x:Name="SaveButton"
+        Content="Save"
+        Click="SaveButton_Click" />
+
+<!-- TeachingTip anchored to the Save button -->
+<muxc:TeachingTip x:Name="SaveTip"
+                  Target="{x:Bind SaveButton}"
+                  Title="Autosave is on"
+                  Subtitle="Your work is saved automatically every 5 minutes."
+                  PreferredPlacement="Bottom"
+                  ActionButtonContent="Got it"
+                  ActionButtonClick="SaveTip_ActionButtonClick" />
+```
+
+Show the tip in code:
+
+```csharp
+private void SaveButton_Click(object sender, RoutedEventArgs e)
+{
+    SaveTip.IsOpen = true;
+}
+
+private void SaveTip_ActionButtonClick(TeachingTip sender, object args)
+{
+    sender.IsOpen = false;
+}
+```
+
+## Properties
+
+<ParamField path="IsOpen" type="bool" default="false">
+  Shows (`true`) or hides (`false`) the teaching tip. Set to `true` to display the tip; set to `false` to dismiss it programmatically.
+</ParamField>
+
+<ParamField path="Title" type="string">
+  Bold heading text displayed at the top of the tip content area. Keep this short and action-oriented.
+</ParamField>
+
+<ParamField path="Subtitle" type="string">
+  Body text displayed below the title. Use this to provide additional context or instructions.
+</ParamField>
+
+<ParamField path="Target" type="FrameworkElement">
+  The UI element the tip is anchored to. The tail pointer points toward this element. When `null`, the tip is centered on the page or window. Default: `null`.
+</ParamField>
+
+<ParamField path="PreferredPlacement" type="TeachingTipPlacementMode" default="Auto">
+  The preferred position of the tip relative to its `Target`. Values: `Auto`, `Top`, `Bottom`, `Left`, `Right`, `TopRight`, `TopLeft`, `BottomRight`, `BottomLeft`, `LeftTop`, `LeftBottom`, `RightTop`, `RightBottom`, `Center`. The control falls back to another placement if the preferred one does not fit.
+</ParamField>
+
+<ParamField path="TailVisibility" type="TeachingTipTailVisibility" default="Auto">
+  Controls the tail (pointer) connecting the tip to the target. Values: `Auto` (shown when a `Target` is set), `Visible`, `Collapsed`.
+</ParamField>
+
+<ParamField path="IsLightDismissEnabled" type="bool" default="false">
+  When `true`, clicking outside the tip closes it. When `false`, the tip can only be dismissed via the close button or `IsOpen = false`.
+</ParamField>
+
+<ParamField path="ShouldConstrainToRootBounds" type="bool" default="true">
+  When `true`, the tip stays within the bounds of the root window or page. Set to `false` to allow the tip to extend outside the window.
+</ParamField>
+
+<ParamField path="ActionButtonContent" type="object">
+  Content for the primary action button. Accepts a string or any `UIElement`. When `null`, the action button is not displayed. Default: `null`.
+</ParamField>
+
+<ParamField path="ActionButtonStyle" type="Style">
+  Custom `Style` applied to the action button.
+</ParamField>
+
+<ParamField path="ActionButtonCommand" type="ICommand">
+  `ICommand` invoked when the action button is clicked.
+</ParamField>
+
+<ParamField path="ActionButtonCommandParameter" type="object">
+  Parameter passed to `ActionButtonCommand`.
+</ParamField>
+
+<ParamField path="CloseButtonContent" type="object">
+  Content for the close button. When `null`, a default close icon is shown. Default: `null`.
+</ParamField>
+
+<ParamField path="CloseButtonStyle" type="Style">
+  Custom `Style` applied to the close button.
+</ParamField>
+
+<ParamField path="CloseButtonCommand" type="ICommand">
+  `ICommand` invoked when the close button is clicked.
+</ParamField>
+
+<ParamField path="CloseButtonCommandParameter" type="object">
+  Parameter passed to `CloseButtonCommand`.
+</ParamField>
+
+<ParamField path="HeroContent" type="UIElement">
+  A full-width image or element displayed at the top or bottom of the tip, outside the content padding area. Typically an `Image`. Default: `null`.
+</ParamField>
+
+<ParamField path="HeroContentPlacement" type="TeachingTipHeroContentPlacementMode" default="Auto">
+  Controls whether `HeroContent` appears at the top or bottom of the tip. Values: `Auto`, `Top`, `Bottom`.
+</ParamField>
+
+<ParamField path="IconSource" type="IconSource">
+  An icon displayed to the left of the title. Default: `null`.
+</ParamField>
+
+<ParamField path="PlacementMargin" type="Thickness">
+  Additional margin added between the tip and the target element.
+</ParamField>
+
+## Events
+
+<ParamField path="ActionButtonClick" type="TypedEventHandler&lt;TeachingTip, object&gt;">
+  Raised when the user clicks the action button.
+</ParamField>
+
+<ParamField path="CloseButtonClick" type="TypedEventHandler&lt;TeachingTip, object&gt;">
+  Raised when the user clicks the close button.
+</ParamField>
+
+<ParamField path="Closing" type="TypedEventHandler&lt;TeachingTip, TeachingTipClosingEventArgs&gt;">
+  Raised just before the tip closes. `args.Reason` is `CloseButton`, `LightDismiss`, or `Programmatic`. Set `args.Cancel = true` or call `args.GetDeferral()` to delay the close.
+</ParamField>
+
+<ParamField path="Closed" type="TypedEventHandler&lt;TeachingTip, TeachingTipClosedEventArgs&gt;">
+  Raised after the tip has fully closed. `args.Reason` indicates how it was dismissed.
+</ParamField>
+
+## Advanced usage
+
+### Multi-step onboarding sequence
+
+Chain multiple tips together by opening the next one when the action button is clicked:
+
+```csharp
+private void Step1Tip_ActionButtonClick(TeachingTip sender, object args)
+{
+    sender.IsOpen = false;
+    Step2Tip.IsOpen = true;
+}
+
+private void Step2Tip_ActionButtonClick(TeachingTip sender, object args)
+{
+    sender.IsOpen = false;
+    Step3Tip.IsOpen = true;
+}
+```
+
+### Hero image tip
+
+```xml
+<muxc:TeachingTip x:Name="FeatureTip"
+                  Title="Dark mode is here"
+                  Subtitle="Switch themes any time from Settings."
+                  PreferredPlacement="Bottom"
+                  HeroContentPlacement="Top"
+                  ActionButtonContent="Try it now"
+                  CloseButtonContent="Later"
+                  ActionButtonClick="FeatureTip_ActionButtonClick">
+    <muxc:TeachingTip.HeroContent>
+        <Image Source="ms-appx:///Assets/DarkMode.png"
+               Stretch="UniformToFill"
+               MaxHeight="200" />
+    </muxc:TeachingTip.HeroContent>
+</muxc:TeachingTip>
+```
+
+### Tip without a target (centered overlay)
+
+Omit `Target` to center the tip on the page, useful for first-run experiences:
+
+```xml
+<muxc:TeachingTip x:Name="WelcomeTip"
+                  Title="Welcome to My App"
+                  Subtitle="Let's take a quick tour to get you started."
+                  IsLightDismissEnabled="False"
+                  ActionButtonContent="Start tour"
+                  CloseButtonContent="Skip" />
+```
+
+### Asynchronous close with deferral
+
+```csharp
+private async void FeatureTip_Closing(TeachingTip sender,
+    TeachingTipClosingEventArgs args)
+{
+    // Acquire a deferral to allow an async operation before close
+    var deferral = args.GetDeferral();
+    await SaveOnboardingStateAsync();
+    deferral.Complete();
+}
+```
+
+<Note>
+  Avoid showing multiple `TeachingTip` controls at the same time. If you need a multi-step tour, open each tip only after the previous one is fully closed.
+</Note>

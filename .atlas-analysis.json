@@ -1,24 +1,11 @@
 {
-  "$schema": "https://mintlify.com/docs.json",
-  "name": "WinUI",
+  "projectType": "frontend",
+  "projectName": "WinUI",
+  "projectDescription": "WinUI is a modern UI framework and rich control library for building high-performing, Fluent Design Windows applications using C# or C++.",
   "theme": "willow",
-  "colors": {
-    "primary": "#7c7c7c",
-    "light": "#0a0a0a",
-    "dark": "#c7c7c7"
-  },
-  "favicon": "https://media.brand.dev/3512cb0e-ba95-4f83-9adf-47cd903466dd.png",
-  "navbar": {
-    "primary": {
-      "type": "github",
-      "href": "https://github.com/microsoft/microsoft-ui-xaml"
-    }
-  },
-  "footer": {
-    "socials": {
-      "github": "https://github.com/microsoft/microsoft-ui-xaml"
-    }
-  },
+  "primaryColor": "#7c7c7c",
+  "lightColor": "#0a0a0a",
+  "darkColor": "#c7c7c7",
   "navigation": {
     "tabs": [
       {
@@ -27,7 +14,7 @@
           {
             "group": "Get Started",
             "pages": [
-              "index",
+              "introduction",
               "quickstart",
               "building-from-source"
             ]
@@ -103,5 +90,40 @@
         ]
       }
     ]
-  }
+  },
+  "keyFeatures": [
+    "60+ modern controls implementing Fluent Design (NavigationView, TabView, TreeView, ColorPicker, InfoBar, TeachingTip, and more)",
+    "Full Fluent Design System support with light/dark theme resources and compact mode",
+    "Accessible controls with built-in AutomationPeer implementations",
+    "Cross-architecture support: x86, x64, ARM64",
+    "Ships as part of the Windows App SDK (WinAppSDK) via NuGet",
+    "XAML-based declarative UI with C# and C++/WinRT bindings",
+    "Experimental/Preview API pipeline for community feedback before stable release",
+    "WinUI 3 Gallery interactive sample app available on the Microsoft Store"
+  ],
+  "publicApiSurface": [
+    "Microsoft.UI.Xaml.Controls.NavigationView",
+    "Microsoft.UI.Xaml.Controls.TabView",
+    "Microsoft.UI.Xaml.Controls.TreeView",
+    "Microsoft.UI.Xaml.Controls.ColorPicker",
+    "Microsoft.UI.Xaml.Controls.InfoBar",
+    "Microsoft.UI.Xaml.Controls.TeachingTip",
+    "Microsoft.UI.Xaml.Controls.NumberBox",
+    "Microsoft.UI.Xaml.Controls.RadioButtons",
+    "Microsoft.UI.Xaml.Controls.RatingControl",
+    "Microsoft.UI.Xaml.Controls.ProgressBar",
+    "Microsoft.UI.Xaml.Controls.ProgressRing",
+    "Microsoft.UI.Xaml.Controls.Expander",
+    "Microsoft.UI.Xaml.Controls.BreadcrumbBar",
+    "Microsoft.UI.Xaml.Controls.PipsPager",
+    "Microsoft.UI.Xaml.Controls.ItemsView",
+    "Microsoft.UI.Xaml.Controls.SelectorBar",
+    "Microsoft.UI.Xaml.Controls.TitleBar",
+    "Microsoft.UI.Xaml.Controls.ScrollView",
+    "Microsoft.UI.Xaml.Controls.AnnotatedScrollBar",
+    "Microsoft.UI.Xaml.Controls.AnimatedIcon",
+    "Microsoft.UI.Xaml.Controls.SwipeControl",
+    "Microsoft.UI.Xaml.Controls.WebView2",
+    "Microsoft.UI.Xaml.Controls.XamlControlsResources"
+  ]
 }

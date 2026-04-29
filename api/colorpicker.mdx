@@ -1,0 +1,247 @@
+---
+title: "ColorPicker API Reference — WinUI 3 Color Selector"
+description: "Full API reference for WinUI ColorPicker: Color, spectrum shape, alpha channel, text inputs, HSV range limits, and XAML examples inline and in flyouts."
+---
+
+ColorPicker is a color selection widget that gives users a visual interface for choosing a color. It combines a color spectrum (box or ring shape), a value slider, an optional alpha slider, and text input fields for hex and individual channel values. ColorPicker is typically placed inline in a settings panel or hosted inside a `Flyout` attached to a colored button.
+
+## Key features
+
+- Color spectrum in `Box` or `Ring` shape
+- Optional alpha channel slider and text input
+- Individual channel text inputs (hue, saturation, value or RGB depending on `ColorSpectrumComponents`)
+- Hex input field for direct hex color entry
+- Previous-color preview swatch
+- Configurable HSV range constraints (`MinHue`/`MaxHue`, `MinSaturation`/`MaxSaturation`, `MinValue`/`MaxValue`)
+- `Orientation` support for vertical or horizontal layout (WinUI 3 v3+)
+- `ColorChanged` event for reacting to every color update
+
+## Basic usage
+
+<Tabs>
+  <Tab title="XAML">
+```xml
+<ColorPicker x:Name="MyColorPicker"
+             Color="Red"
+             IsAlphaEnabled="True"
+             ColorChanged="MyColorPicker_ColorChanged" />
+```
+  </Tab>
+  <Tab title="C#">
+```csharp
+private void MyColorPicker_ColorChanged(ColorPicker sender,
+    ColorChangedEventArgs args)
+{
+    Windows.UI.Color newColor = args.NewColor;
+    // Apply the new color to your UI
+    MyRectangle.Fill = new SolidColorBrush(newColor);
+}
+```
+  </Tab>
+</Tabs>
+
+## Properties
+
+<ParamField path="Color" type="Windows.UI.Color" default="{255, 255, 255, 255}">
+  The currently selected color as a `Windows.UI.Color` struct (ARGB). Bind to this property two-way to keep your model in sync, or read it in the `ColorChanged` event handler.
+</ParamField>
+
+<ParamField path="PreviousColor" type="IReference&lt;Windows.UI.Color&gt;">
+  An optional reference color displayed as a "before" swatch in the preview area, allowing users to compare the previous color against the new selection. Set to `null` to hide the previous-color swatch.
+</ParamField>
+
+<ParamField path="IsAlphaEnabled" type="Boolean" default="false">
+  Master switch for alpha channel support. When `false`, the alpha slider and alpha text input are both hidden regardless of `IsAlphaSliderVisible` and `IsAlphaTextInputVisible`.
+</ParamField>
+
+<ParamField path="IsColorSpectrumVisible" type="Boolean" default="true">
+  Whether the main color spectrum (box or ring) is shown.
+</ParamField>
+
+<ParamField path="ColorSpectrumShape" type="ColorSpectrumShape" default="Box">
+  The shape of the color spectrum. `Box` renders a rectangular gradient. `Ring` renders a circular hue ring.
+</ParamField>
+
+<ParamField path="ColorSpectrumComponents" type="ColorSpectrumComponents" default="HueSaturation">
+  Which two HSV components are mapped to the spectrum axes. Accepted values:
+
+  | Value | Spectrum axes | Slider axis |
+  |---|---|---|
+  | `HueSaturation` | Hue (X), Saturation (Y) | Value |
+  | `HueValue` | Hue (X), Value (Y) | Saturation |
+  | `SaturationValue` | Saturation (X), Value (Y) | Hue |
+  | `SaturationHue` | Saturation (X), Hue (Y) | Value |
+  | `ValueHue` | Value (X), Hue (Y) | Saturation |
+  | `ValueSaturation` | Value (X), Saturation (Y) | Hue |
+</ParamField>
+
+<ParamField path="IsColorPreviewVisible" type="Boolean" default="true">
+  Whether the color preview swatch (showing the currently selected color and the optional `PreviousColor`) is shown.
+</ParamField>
+
+<ParamField path="IsColorSliderVisible" type="Boolean" default="true">
+  Whether the value (or whichever component is not on the spectrum axes) slider is shown below the spectrum.
+</ParamField>
+
+<ParamField path="IsAlphaSliderVisible" type="Boolean" default="true">
+  Whether the alpha slider is shown. Has no effect when `IsAlphaEnabled` is `false`.
+</ParamField>
+
+<ParamField path="IsMoreButtonVisible" type="Boolean" default="false">
+  Whether a "More" button is shown to expand the text input fields. When `true`, the channel text inputs and hex input are hidden until the user clicks **More**.
+</ParamField>
+
+<ParamField path="IsColorChannelTextInputVisible" type="Boolean" default="true">
+  Whether the individual channel text inputs (for example, the R, G, B or H, S, V fields) are shown.
+</ParamField>
+
+<ParamField path="IsAlphaTextInputVisible" type="Boolean" default="true">
+  Whether the alpha channel text input field is shown. Has no effect when `IsAlphaEnabled` is `false`.
+</ParamField>
+
+<ParamField path="IsHexInputVisible" type="Boolean" default="true">
+  Whether the hex color input field (for example, `#FF5733`) is shown.
+</ParamField>
+
+<ParamField path="MinHue" type="Int32" default="0">
+  The minimum hue value (0–359) selectable in the spectrum. Use this with `MaxHue` to restrict the picker to a subset of hues.
+</ParamField>
+
+<ParamField path="MaxHue" type="Int32" default="359">
+  The maximum hue value (0–359) selectable in the spectrum.
+</ParamField>
+
+<ParamField path="MinSaturation" type="Int32" default="0">
+  The minimum saturation value (0–100) selectable in the spectrum.
+</ParamField>
+
+<ParamField path="MaxSaturation" type="Int32" default="100">
+  The maximum saturation value (0–100) selectable in the spectrum.
+</ParamField>
+
+<ParamField path="MinValue" type="Int32" default="0">
+  The minimum HSV value (brightness, 0–100) selectable in the spectrum.
+</ParamField>
+
+<ParamField path="MaxValue" type="Int32" default="100">
+  The maximum HSV value (brightness, 0–100) selectable in the spectrum.
+</ParamField>
+
+<ParamField path="Orientation" type="Orientation" default="Vertical">
+  Layout orientation of the picker (WinUI 3 v3+). `Vertical` stacks the spectrum above the sliders and text inputs. `Horizontal` places them side by side, suitable for wide flyouts or toolbars.
+</ParamField>
+
+## Events
+
+<ParamField path="ColorChanged" type="TypedEventHandler&lt;ColorPicker, ColorChangedEventArgs&gt;">
+  Fires whenever the selected color changes, whether the user drags the spectrum, moves a slider, or types in a text field. The `ColorChangedEventArgs` expose `OldColor` and `NewColor` as `Windows.UI.Color` values.
+</ParamField>
+
+## Advanced examples
+
+### ColorPicker in a flyout
+
+A common pattern is attaching a `ColorPicker` to a `Flyout` triggered by a colored `Button`. The button previews the selected color; the flyout shows the full picker.
+
+<Tabs>
+  <Tab title="XAML">
+```xml
+<Button x:Name="ColorButton" Content="Choose color">
+    <Button.Flyout>
+        <Flyout x:Name="ColorFlyout" Closed="ColorFlyout_Closed">
+            <ColorPicker x:Name="FlyoutColorPicker"
+                         IsAlphaEnabled="False"
+                         IsHexInputVisible="True"
+                         ColorChanged="FlyoutColorPicker_ColorChanged" />
+        </Flyout>
+    </Button.Flyout>
+</Button>
+
+<Rectangle x:Name="ColorPreview"
+           Width="48" Height="48"
+           RadiusX="4" RadiusY="4" />
+```
+  </Tab>
+  <Tab title="C#">
+```csharp
+private void FlyoutColorPicker_ColorChanged(ColorPicker sender,
+    ColorChangedEventArgs args)
+{
+    ColorPreview.Fill = new SolidColorBrush(args.NewColor);
+    ColorButton.Background = new SolidColorBrush(args.NewColor);
+}
+
+private void ColorFlyout_Closed(object sender, object e)
+{
+    // Commit the final color to your view model
+    ViewModel.SelectedColor = FlyoutColorPicker.Color;
+}
+```
+  </Tab>
+</Tabs>
+
+### Restricting to warm colors only
+
+Set `MinHue` and `MaxHue` to limit the spectrum to a specific hue range — for example, restricting the user to warm tones (red through yellow):
+
+```xml
+<ColorPicker MinHue="0"
+             MaxHue="60"
+             ColorSpectrumShape="Ring"
+             IsColorChannelTextInputVisible="False"
+             IsHexInputVisible="False"
+             ColorChanged="WarmPicker_ColorChanged" />
+```
+
+### Horizontal layout for a toolbar
+
+```xml
+<ColorPicker Orientation="Horizontal"
+             IsAlphaEnabled="True"
+             IsMoreButtonVisible="False"
+             ColorSpectrumShape="Box"
+             Width="480" />
+```
+
+### Two-way binding to a ViewModel property
+
+<Tabs>
+  <Tab title="XAML">
+```xml
+<ColorPicker Color="{x:Bind ViewModel.BrushColor, Mode=TwoWay}"
+             IsAlphaEnabled="True" />
+```
+  </Tab>
+  <Tab title="C#">
+```csharp
+public class MyViewModel : INotifyPropertyChanged
+{
+    private Windows.UI.Color _brushColor = Colors.CornflowerBlue;
+    public Windows.UI.Color BrushColor
+    {
+        get => _brushColor;
+        set
+        {
+            _brushColor = value;
+            OnPropertyChanged(nameof(BrushColor));
+        }
+    }
+    // INotifyPropertyChanged implementation ...
+}
+```
+  </Tab>
+</Tabs>
+
+## Notes
+
+<Note>
+  `IsAlphaEnabled` is the master alpha switch. Setting it to `false` hides the alpha slider and alpha text input unconditionally, even if `IsAlphaSliderVisible` and `IsAlphaTextInputVisible` are both `true`.
+</Note>
+
+<Tip>
+  Use `IsMoreButtonVisible = true` in compact layouts (such as a narrow flyout) to hide the text inputs behind a disclosure button. This keeps the picker small by default while still giving users access to hex entry.
+</Tip>
+
+<Tip>
+  When embedding ColorPicker in a `Flyout`, handle the `Flyout.Closed` event to commit the final color to your view model, rather than committing on every `ColorChanged` call, to avoid intermediate state updates while the user is still dragging the spectrum.
+</Tip>

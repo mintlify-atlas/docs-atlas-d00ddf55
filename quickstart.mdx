@@ -1,81 +1,133 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
-icon: 'rocket'
+title: "Get started with WinUI 3 in Visual Studio"
+description: "Install the Windows App SDK workload, create a WinUI 3 project, add your first controls in XAML, and run your app in under 10 minutes."
 ---
 
-## Get started in three steps
+WinUI 3 is the native UI framework for Windows desktop apps, shipping as part of the Windows App SDK. This guide walks you through everything you need to go from a fresh machine to a running WinUI 3 app.
 
-Get your documentation site running locally and make your first customization.
+## System requirements
 
-### Step 1: Set up your local environment
+Before you begin, make sure your machine meets these requirements:
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+| Requirement | Minimum version |
+|---|---|
+| Windows | Windows 10, version 1809 (build 17763) or later |
+| Visual Studio | Visual Studio 2022 (any edition) |
+| Workload | Windows App SDK (installed via Visual Studio Installer) |
 
-### Step 2: Deploy your changes
+<Note>
+Windows 11 is recommended for the best development experience, but Windows 10 1809 and later are fully supported for both development and deployment.
+</Note>
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+## Create your first WinUI 3 app
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+<Steps>
+  <Step title="Install the Windows App SDK workload">
+    Open the **Visual Studio Installer** from your Start menu. Select **Modify** next to your Visual Studio 2022 installation.
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+    In the **Workloads** tab, find and check **Windows application development**. This installs the Windows App SDK components, WinUI 3 project templates, and related tools.
 
-### Step 3: Go live
+    Click **Modify** to apply the changes. Wait for the installation to complete, then close the installer.
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+    <Tip>
+      If Visual Studio 2022 is not yet installed, download it from [visualstudio.microsoft.com](https://visualstudio.microsoft.com/) and select the **Windows application development** workload during initial setup.
+    </Tip>
+  </Step>
+
+  <Step title="Create a new WinUI 3 project">
+    Open Visual Studio 2022 and select **Create a new project** from the start window.
+
+    In the project template search box, type `WinUI`. Select the **Blank App, Packaged (WinUI 3 in Desktop)** template, then click **Next**.
+
+    <Info>
+      The "Packaged" template includes an application package manifest and is the recommended starting point for distributing apps through the Microsoft Store or via MSIX.
+    </Info>
+
+    Configure your project:
+    - **Project name**: `MyWinUIApp` (or any name you prefer)
+    - **Location**: choose a folder on your machine
+    - **Solution name**: leave as the default or customize
+
+    Click **Create**. Visual Studio generates a solution with a `MainWindow.xaml` file and a code-behind `MainWindow.xaml.cs`.
+  </Step>
+
+  <Step title="Explore the generated project structure">
+    After the project is created, Solution Explorer shows the key files:
+
+    - **`App.xaml` / `App.xaml.cs`** — application entry point and lifecycle
+    - **`MainWindow.xaml`** — the main window XAML layout
+    - **`MainWindow.xaml.cs`** — code-behind for the main window
+    - **`Package.appxmanifest`** — MSIX package identity and capabilities
+
+    The default `MainWindow.xaml` already contains a `StackPanel` with a `Button` and a `TextBlock`. You will modify these in the next step.
+  </Step>
+
+  <Step title="Add controls in XAML and wire up a click handler">
+    Open `MainWindow.xaml`. Replace the contents of the `StackPanel` element with the following markup:
+
+    <CodeGroup>
+
+    ```xml MainWindow.xaml
+    <StackPanel
+        Orientation="Vertical"
+        HorizontalAlignment="Center"
+        VerticalAlignment="Center"
+        Spacing="12">
+
+        <TextBlock
+            x:Name="myTextBlock"
+            Text="Hello, WinUI 3!"
+            FontSize="24"
+            HorizontalAlignment="Center" />
+
+        <Button
+            x:Name="myButton"
+            Content="Click me"
+            HorizontalAlignment="Center"
+            Click="Button_Click" />
+
+    </StackPanel>
+    ```
+
+    ```csharp MainWindow.xaml.cs
+    private void Button_Click(object sender, RoutedEventArgs e)
+    {
+        myButton.Content = "Clicked!";
+        myTextBlock.Text = "You clicked the button.";
+    }
+    ```
+
+    </CodeGroup>
+
+    The `x:Name` attribute assigns a name you can reference in code-behind. The `Click` attribute wires the button to the `Button_Click` method in `MainWindow.xaml.cs`.
+  </Step>
+
+  <Step title="Run the app">
+    Press **F5** (or select **Debug > Start Debugging**) to build and launch the app.
+
+    Visual Studio compiles the project, packages it, and deploys it to your local machine. A window appears showing your `TextBlock` and `Button`. Click the button to see both controls update.
+
+    <Check>
+      If the window appears and the button responds to clicks, your WinUI 3 environment is set up correctly.
+    </Check>
+
+    To run without the debugger attached, press **Ctrl+F5** or select **Debug > Start Without Debugging**.
+  </Step>
+</Steps>
 
 ## Next steps
 
-Now that you have your docs running, explore these key features:
-
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Browse WinUI controls" icon="grid-2" href="/controls/overview">
+    Explore the full set of Fluent Design controls available in WinUI 3.
+  </Card>
+  <Card title="Styling and theming" icon="palette" href="/theming/fluent-design">
+    Customize colors, typography, and visual resources using Fluent Design tokens.
+  </Card>
+  <Card title="Build from source" icon="code" href="/building-from-source">
+    Clone the WinUI repository and compile the framework binaries yourself.
+  </Card>
+  <Card title="Accessibility" icon="universal-access" href="/guides/accessibility">
+    Make your app usable by everyone using built-in accessibility support.
+  </Card>
 </CardGroup>
-
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>

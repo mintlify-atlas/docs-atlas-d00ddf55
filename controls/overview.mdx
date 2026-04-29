@@ -1,0 +1,102 @@
+---
+title: "WinUI Controls Overview: Browse All Control Categories"
+description: "Browse every WinUI control organized by category — layout, navigation, input, data display, dialogs, and media — with links to detailed usage guides."
+---
+
+WinUI ships a comprehensive library of controls built on top of the Windows UI framework. Each control follows Fluent Design principles and supports theming, accessibility, and high-DPI rendering out of the box. The sections below group controls by purpose and link to dedicated pages with XAML examples and API details.
+
+<CardGroup cols={2}>
+  <Card title="Layout" icon="layout" href="/controls/layout">
+    Panels and containers that arrange children: TwoPaneView, SplitView, Expander, WrapPanel, and LayoutPanel.
+  </Card>
+  <Card title="Navigation" icon="compass" href="/controls/navigation">
+    Shell-level navigation patterns: NavigationView, TabView, BreadcrumbBar, PipsPager, and SelectorBar.
+  </Card>
+  <Card title="Input" icon="pencil" href="/controls/input">
+    User input controls: NumberBox, RadioButtons, RatingControl, SplitButton, DropDownButton, ColorPicker, and SwipeControl.
+  </Card>
+  <Card title="Data display" icon="table" href="/controls/data-display">
+    Controls for presenting collections and structured data: TreeView, ItemsView, ItemsRepeater, AnnotatedScrollBar, PersonPicture, and InfoBadge.
+  </Card>
+  <Card title="Dialogs and flyouts" icon="message-square" href="/controls/dialogs-flyouts">
+    Overlays and in-page notifications: InfoBar, TeachingTip, CommandBarFlyout, MenuBar, and RadioMenuFlyoutItem.
+  </Card>
+  <Card title="Media and progress" icon="activity" href="/controls/media-progress">
+    Playback and progress feedback: ProgressBar, ProgressRing, AnimatedIcon, AnimatedVisualPlayer, and WebView2.
+  </Card>
+</CardGroup>
+
+---
+
+## Layout controls
+
+| Control | Description |
+|---|---|
+| **TwoPaneView** | Dual-pane layout that responds to wide and tall display modes, including foldable device hinges. |
+| **SplitView** | A navigation drawer (pane) paired with a content area; supports Inline, Compact, and Overlay display modes. |
+| **Expander** | Collapsible container with a header that toggles visibility of child content. |
+| **WrapPanel** | Arranges children left-to-right and wraps to the next row when horizontal space runs out. |
+| **LayoutPanel** | Base panel used as a foundation for custom layout implementations. |
+
+---
+
+## Navigation controls
+
+| Control | Description |
+|---|---|
+| **NavigationView** | Left or top navigation shell with a collapsible pane, back button, and settings item. |
+| **TabView** | Tab strip for multi-document or multi-section UIs; supports closable, reorderable, and tear-out tabs. |
+| **BreadcrumbBar** | Horizontal trail of clickable breadcrumb items representing a navigation hierarchy. |
+| **PipsPager** | Row of dot indicators used to indicate the current page in a paginated view. |
+| **SelectorBar** | Segmented, tab-like selector bar for switching between a small set of views. |
+
+---
+
+## Input controls
+
+| Control | Description |
+|---|---|
+| **NumberBox** | Numeric text input with built-in validation, min/max clamping, spin buttons, and expression evaluation. |
+| **RadioButtons** | Managed group of radio buttons with consistent spacing, keyboard navigation, and optional column layout. |
+| **RatingControl** | Star-based rating input with read-only, placeholder, and custom glyph or image support. |
+| **SplitButton** | Button whose primary area triggers a click action and whose secondary chevron opens a flyout. |
+| **DropDownButton** | Button that opens a flyout when clicked; inherits from the platform `Button` type. |
+| **ColorPicker** | Full-featured color selection control with spectrum, sliders, and hex/channel text inputs. |
+| **SwipeControl** | Touch-friendly control that reveals action items when the user swipes left, right, up, or down. |
+
+---
+
+## Data display controls
+
+| Control | Description |
+|---|---|
+| **TreeView** | Hierarchical item tree with expand/collapse, single/multiple selection, and drag-and-drop. |
+| **ItemsView** | Flexible virtualized collection control that pairs with any `Layout` and supports multiple selection modes. |
+| **ItemsRepeater** | Lightweight data repeater that virtualizes items without a built-in scrolling container. |
+| **AnnotatedScrollBar** | Scrollbar with label annotations along its track, designed to pair with `ItemsView` or `ScrollView`. |
+| **PersonPicture** | Circular avatar that shows a profile photo, initials derived from a contact, or a group icon. |
+| **InfoBadge** | Small badge overlay that communicates a numeric count or a status icon on another control. |
+
+---
+
+## Dialogs and flyout controls
+
+| Control | Description |
+|---|---|
+| **InfoBar** | Persistent, inline notification banner with four severity levels and optional action buttons. |
+| **TeachingTip** | Callout-style tip anchored to a target element, used for onboarding and feature discovery. |
+| **CommandBarFlyout** | Flyout that contains a command bar with primary and overflow command items. |
+| **MenuBar** | Classic menu bar strip with top-level items that open menu flyouts. |
+| **RadioMenuFlyoutItem** | Menu flyout item that behaves like a radio button within a named group. |
+
+---
+
+## Media and progress controls
+
+| Control | Description |
+|---|---|
+| **ProgressBar** | Horizontal bar showing determinate or indeterminate progress; supports error and paused states. |
+| **ProgressRing** | Circular spinner for indeterminate progress, with optional determinate value display. |
+| **AnimatedIcon** | Icon element that plays a Lottie-compatible animated visual, driven by a named state string. |
+| **AnimatedVisualPlayer** | Standalone player for `IAnimatedVisualSource` content with playback controls and rate adjustment. |
+| **WebView2** | Embeds a Chromium-based Edge WebView2 control for rendering web content inside a WinUI window. |

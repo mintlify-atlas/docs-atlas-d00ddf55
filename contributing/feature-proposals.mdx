@@ -1,0 +1,100 @@
+---
+title: "Proposing New Features and APIs for WinUI"
+description: "Understand WinUI's feature proposal process, how proposals are triaged and categorized, how API review works, and what happens when a proposal is closed."
+---
+
+Before any new control, public API, or UI behavior is added to WinUI, it goes through a structured proposal and review process. This ensures that changes are aligned with the roadmap, technically sound, and designed in a way that feels natural to WinUI developers. This page walks through each stage from initial idea to merged implementation.
+
+## When you must follow this process
+
+You must go through the feature proposal process before submitting any code that:
+
+- Adds, removes, or changes a public API
+- Adds or alters user-visible UI or visual designs
+- Changes any core functionality documented on docs.microsoft.com
+
+You do **not** need to follow this process for:
+
+- Bug fixes
+- Internal performance improvements that do not change public API
+- Small code changes that do not affect major functionality
+
+## Feature categories
+
+All new feature proposals start as **long-term** by default — meaning the WinUI team considers them unlikely to be addressed within the next year. The team may reprioritize based on customer and business needs.
+
+| Category | Timeframe |
+|---|---|
+| **Short-term** | Less than a year — actively being considered for an upcoming release |
+| **Long-term** | Not likely in the next year — tracked but not currently planned |
+
+<Note>
+  Being labeled long-term does not mean a proposal will never be considered. The team encourages ongoing community engagement on all proposals, including closed ones, to signal their importance.
+</Note>
+
+## The proposal process
+
+<Steps>
+  <Step title="Search existing issues">
+    Before filing anything, search the [issue tracker](https://github.com/microsoft/microsoft-ui-xaml/issues) for a similar proposal. If one exists, add your comments and votes there rather than creating a duplicate.
+  </Step>
+  <Step title="Create a feature proposal issue">
+    Use the [Feature Proposal template](https://github.com/Microsoft/microsoft-ui-xaml/issues/new?template=feature_proposal.md) to file a new issue. Include as much detail as you have — a summary and rationale is enough to start. A complete design is not required at this stage.
+  </Step>
+  <Step title="Wait for a team owner">
+    The WinUI team triages all incoming issues regularly and will assign a team owner to your proposal. Issues that are lower priority or have many open questions may stay open without action for an extended period.
+  </Step>
+  <Step title="Community discussion">
+    The issue stays open for community discussion while the team owner evaluates it. Engage constructively — this is your opportunity to provide additional context, use cases, and rationale that may influence the team's decision.
+  </Step>
+  <Step title="Owner review and decision">
+    The WinUI team owner reviews the proposal against the [WinUI roadmap](https://github.com/microsoft/microsoft-ui-xaml/blob/main/docs/roadmap.md) and contribution guidelines, then either approves or closes the issue.
+  </Step>
+  <Step title="API review (if applicable)">
+    If the feature adds new public APIs, the team opens an API review in the [WinUI API review repository](https://github.com/microsoft/microsoft-ui-xaml-specs). All new public APIs must be reviewed and approved before any code can be merged.
+  </Step>
+  <Step title="Implementation">
+    Once approved, the feature can be implemented by you, the WinUI team, or other community members. If you plan to implement it yourself, state this in the issue comments so it can be assigned to you.
+  </Step>
+  <Step title="Merge">
+    When the implementation is complete and tested, submit a pull request against `main`. Follow the standard [contribution workflow](/contributing/overview#contribution-workflow).
+  </Step>
+  <Step title="Documentation and samples">
+    After merging, the team updates the documentation and, where applicable, adds a sample to the [WinUI 3 Gallery](https://github.com/Microsoft/WinUI-Gallery/). You are welcome to contribute to docs and samples as well.
+  </Step>
+  <Step title="Binary release">
+    The feature is first published in a signed prerelease NuGet package from the `main` branch. After sufficient validation, it is included in the next stable NuGet release.
+  </Step>
+</Steps>
+
+## API review process
+
+The WinUI team conducts thorough API reviews before merging any new public surface. Reviews are hosted in the [microsoft-ui-xaml-specs repository](https://github.com/microsoft/microsoft-ui-xaml-specs) and are open to community participation.
+
+API reviews can cover anything from a single new property to an entire new control with dozens of APIs. Participating in these discussions is one of the most impactful ways to contribute — you help shape the final design before it becomes a stable, versioned public API.
+
+<Tip>
+  API spec discussions go into significantly more detail than the original feature proposal. If you want to influence the precise naming, behavior, and structure of new WinUI APIs, this is where to engage.
+</Tip>
+
+## What happens when a proposal is closed
+
+Closing a proposal does not mean the idea is permanently rejected. When the team closes a proposal, they will explain the reason and describe how (or whether) the idea fits into future plans.
+
+Common reasons for closing include:
+
+- The proposal does not align with the current roadmap or WinUI's long-term vision
+- The maintenance or compatibility cost outweighs the benefit
+- A similar or overlapping proposal already exists
+
+<Info>
+  Even after a proposal is closed, you can continue to comment on it. Ongoing engagement signals to the team that a feature matters to the community and can influence future prioritization.
+</Info>
+
+## Feature planning and roadmap
+
+The WinUI team's longer-term plans are shaped by evolving business and customer priorities and are often confidential until a release is close. However, the team shares what's coming next after a major release, once the feature list is finalized.
+
+Preview and experimental releases provide more frequent visibility into what's new and what's changing.
+
+For longer-term direction, see the [Windows App SDK feature roadmap](https://github.com/microsoft/WindowsAppSDK/blob/main/docs/roadmap.md).

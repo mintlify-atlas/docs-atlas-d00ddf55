@@ -1,0 +1,181 @@
+---
+title: "TitleBar control API reference — WinUI"
+description: "API reference for the WinUI TitleBar control. Customize your window title bar with icons, subtitles, content slots, back button, and pane toggle button."
+---
+
+`TitleBar` is a WinUI control that replaces the default system title bar with a fully customizable Fluent-design bar. It manages drag regions automatically, integrates with `NavigationView` back and pane-toggle gestures, and exposes left, center, and right content slots for controls such as `AutoSuggestBox` or `PersonPicture`.
+
+## Key features
+
+- `Title` and `Subtitle` text with automatic collapse when empty
+- `IconSource` slot for an app or page icon
+- Three content slots — `LeftHeader`, `Content` (center), and `RightHeader` — that expand the bar height from 32 px to 48 px when populated
+- Built-in back button (`IsBackButtonVisible`) and pane-toggle button (`IsPaneToggleButtonVisible`)
+- `BackRequested` and `PaneToggleRequested` events for navigation integration
+- Mica theming and caption-button color management
+
+## Basic usage
+
+```xml
+<Window
+    x:Class="App1.MainWindow"
+    xmlns:local="using:App1"
+    mc:Ignorable="d">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <TitleBar x:Name="AppTitleBar"
+                  Title="My App"
+                  Subtitle="Preview">
+            <TitleBar.IconSource>
+                <SymbolIconSource Symbol="Home" />
+            </TitleBar.IconSource>
+        </TitleBar>
+
+        <!-- Page content -->
+    </Grid>
+</Window>
+```
+
+Register the control as the window's title bar in code-behind:
+
+```csharp
+public MainWindow()
+{
+    InitializeComponent();
+
+    ExtendsContentIntoTitleBar = true;
+    SetTitleBar(AppTitleBar);
+}
+```
+
+## Properties
+
+<ParamField path="Title" type="string">
+  Text displayed as the primary app or document title. Collapses automatically when the string is empty or the bar is in compact mode. Default: `null`.
+</ParamField>
+
+<ParamField path="Subtitle" type="string">
+  Secondary text shown beside the title, typically used for version labels such as "Preview" or "Beta". Collapses automatically when the string is empty or the bar is in compact mode. Default: `null`.
+</ParamField>
+
+<ParamField path="IconSource" type="IconSource">
+  Icon displayed to the left of the title text. Accepts any `IconSource` type (e.g., `SymbolIconSource`, `BitmapIconSource`). Hidden in minimal display mode. Default: `null`.
+</ParamField>
+
+<ParamField path="LeftHeader" type="UIElement">
+  Content placed to the left of the title region, after any visible back or pane-toggle buttons. Left-aligned. Populating this slot expands the bar to `TitleBarExpandedHeight` (48 px). Default: `null`.
+</ParamField>
+
+<ParamField path="Content" type="UIElement">
+  Center content slot, typically used for an `AutoSuggestBox`. Center-aligned. Populating this slot expands the bar to 48 px. Default: `null`.
+</ParamField>
+
+<ParamField path="RightHeader" type="UIElement">
+  Content placed to the right of the center region, typically used for `PersonPicture` or `AppBarButton`. Right-aligned. Populating this slot expands the bar to 48 px. Default: `null`.
+</ParamField>
+
+<ParamField path="IsBackButtonVisible" type="bool" default="false">
+  Shows or hides the back button. When `true`, the back button appears before `LeftHeader` content.
+</ParamField>
+
+<ParamField path="IsBackButtonEnabled" type="bool" default="true">
+  Enables or disables the back button. Bind to `Frame.CanGoBack` to disable automatically when there is no back stack entry.
+</ParamField>
+
+<ParamField path="IsPaneToggleButtonVisible" type="bool" default="false">
+  Shows or hides the pane-toggle (hamburger) button. Use when `NavigationView` is in `Minimal` display mode, which does not render its own pane-toggle button.
+</ParamField>
+
+## Events
+
+<ParamField path="BackRequested" type="TypedEventHandler&lt;TitleBar, object&gt;">
+  Raised when the user clicks the back button. Handle this event to call `Frame.GoBack()` or perform other back-navigation logic.
+</ParamField>
+
+<ParamField path="PaneToggleRequested" type="TypedEventHandler&lt;TitleBar, object&gt;">
+  Raised when the user clicks the pane-toggle button. Handle this event to toggle `NavigationView.IsPaneOpen`.
+</ParamField>
+
+## Advanced usage
+
+### NavigationView L-pattern integration
+
+The following example wires `TitleBar` to a `NavigationView` in `Minimal` mode so that the back button and pane-toggle button work correctly.
+
+```xml
+<Grid>
+    <Grid.RowDefinitions>
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="*" />
+    </Grid.RowDefinitions>
+
+    <TitleBar x:Name="NavViewTitleBar"
+              Title="My App"
+              IsBackButtonVisible="True"
+              IsBackButtonEnabled="{x:Bind NavFrame.CanGoBack}"
+              IsPaneToggleButtonVisible="True"
+              BackRequested="TitleBar_BackRequested"
+              PaneToggleRequested="TitleBar_PaneToggleRequested">
+        <TitleBar.IconSource>
+            <SymbolIconSource Symbol="Home" />
+        </TitleBar.IconSource>
+    </TitleBar>
+
+    <NavigationView x:Name="NavView" Grid.Row="1">
+        <NavigationView.Resources>
+            <Thickness x:Key="NavigationViewContentGridBorderThickness">1,1,0,0</Thickness>
+            <CornerRadius x:Key="NavigationViewContentGridCornerRadius">8,0,0,0</CornerRadius>
+        </NavigationView.Resources>
+        <Frame x:Name="NavFrame" />
+    </NavigationView>
+</Grid>
+```
+
+```csharp
+public MainWindow()
+{
+    InitializeComponent();
+    ExtendsContentIntoTitleBar = true;
+    SetTitleBar(NavViewTitleBar);
+}
+
+private void TitleBar_BackRequested(TitleBar sender, object args)
+{
+    if (NavFrame.CanGoBack)
+        NavFrame.GoBack();
+}
+
+private void TitleBar_PaneToggleRequested(TitleBar sender, object args)
+{
+    NavView.IsPaneOpen = !NavView.IsPaneOpen;
+}
+```
+
+### Adding controls to the center slot
+
+```xml
+<TitleBar x:Name="SearchTitleBar"
+          Title="My App"
+          IsBackButtonVisible="True"
+          IsPaneToggleButtonVisible="True">
+    <TitleBar.IconSource>
+        <SymbolIconSource Symbol="Home" />
+    </TitleBar.IconSource>
+    <TitleBar.Content>
+        <AutoSuggestBox PlaceholderText="Search" QueryIcon="Find"
+                        MinWidth="300" />
+    </TitleBar.Content>
+    <TitleBar.RightHeader>
+        <PersonPicture DisplayName="Jane Doe" Width="32" Height="32" />
+    </TitleBar.RightHeader>
+</TitleBar>
+```
+
+<Note>
+  `TitleBar` allocates space for the system caption buttons (minimize, maximize, close) but does not own them. Caption button styling is handled through `AppWindow.TitleBar`.
+</Note>

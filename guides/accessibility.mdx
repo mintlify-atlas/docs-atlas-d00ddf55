@@ -1,0 +1,244 @@
+---
+title: "Accessibility in WinUI: AutomationPeer and UIA"
+description: "Build accessible WinUI apps with AutomationPeer implementations, UI Automation patterns, keyboard navigation, high contrast theme support, and Narrator."
+---
+
+WinUI includes accessibility support as a first-class concern. Every control ships with an `AutomationPeer` implementation that exposes it to assistive technologies — including Windows Narrator, third-party screen readers, and UI Automation test frameworks — without any extra configuration on your part.
+
+## Built-in AutomationPeer implementations
+
+Each WinUI control has a dedicated `AutomationPeer` class that implements the relevant UI Automation (UIA) control patterns. These peers are part of the WinUI source and are maintained alongside the controls themselves.
+
+| Control | AutomationPeer | UIA patterns |
+|---|---|---|
+| `NavigationView` | `NavigationViewAutomationPeer` | `ISelectionProvider` |
+| `NavigationViewItem` | `NavigationViewItemAutomationPeer` | `IInvokeProvider`, `ISelectionItemProvider`, `IExpandCollapseProvider` |
+| `TreeViewItem` | `TreeViewItemAutomationPeer` | `IExpandCollapseProvider`, `ISelectionItemProvider` |
+| `Expander` | `ExpanderAutomationPeer` | `IExpandCollapseProvider` |
+| `ItemsRepeater` | `RepeaterAutomationPeer` | — |
+| `RatingControl` | `RatingControlAutomationPeer` | `IRangeValueProvider` |
+| `ProgressBar` | `ProgressBarAutomationPeer` | `IRangeValueProvider` |
+
+`TreeViewItemAutomationPeer` also implements `GetPositionInSetCore`, `GetSizeOfSetCore`, and `GetLevelCore` — the level-in-hierarchy APIs — so Narrator correctly announces depth when navigating tree nodes.
+
+## UI Automation patterns
+
+UIA patterns are interfaces that represent specific interactive behaviors. WinUI controls implement whichever patterns match their behavior:
+
+- **`ISelectionProvider`** — containers where one or more items can be selected (e.g., `NavigationView`).
+- **`ISelectionItemProvider`** — individual selectable items (e.g., `NavigationViewItem`, `TreeViewItem`).
+- **`IExpandCollapseProvider`** — controls that expand and collapse (e.g., `Expander`, `TreeViewItem`, expandable `NavigationViewItem`).
+- **`IInvokeProvider`** — controls that perform an action when activated (e.g., `NavigationViewItem`).
+- **`IRangeValueProvider`** — controls with a numeric range (e.g., `ProgressBar`, `RatingControl`).
+
+These patterns let assistive technologies and automated tests interact with controls without depending on visual structure.
+
+## Setting accessible names with AutomationProperties
+
+Many controls derive their accessible name from their content. For controls that show only icons or images, set the name explicitly using `AutomationProperties.Name`:
+
+```xml
+<!-- Icon-only button needs an explicit accessible name -->
+<Button AutomationProperties.Name="Close dialog" Content="&#xE711;" FontFamily="Segoe Fluent Icons" />
+```
+
+```xml
+<!-- Image needs descriptive alt text -->
+<Image Source="chart.png" AutomationProperties.Name="Monthly revenue chart showing 12% growth" />
+```
+
+Use `AutomationProperties.LabeledBy` when a separate `TextBlock` acts as the visible label for an input control:
+
+```xml
+<TextBlock x:Name="UsernameLabel" Text="Username" />
+<TextBox AutomationProperties.LabeledBy="{Binding ElementName=UsernameLabel}" />
+```
+
+Use `AutomationProperties.HelpText` to provide additional context that appears in tooltips for assistive technologies:
+
+```xml
+<PasswordBox
+    AutomationProperties.Name="Password"
+    AutomationProperties.HelpText="Must be at least 8 characters" />
+```
+
+## Keyboard navigation
+
+WinUI controls support keyboard navigation by default. The following behaviors are built in:
+
+- **Tab / Shift+Tab** — moves focus between interactive controls in tab order.
+- **Arrow keys** — navigate within composite controls (e.g., left/right through `TabView` tabs, up/down through `NavigationView` items, up/down/left/right within a `TreeView`).
+- **Enter / Space** — activates the focused control.
+- **Escape** — dismisses overlays such as `Flyout`, `Dialog`, and `TeachingTip`.
+
+### Controlling tab order
+
+Use `IsTabStop` and `TabIndex` to control which controls participate in tab navigation and in what sequence:
+
+```xml
+<!-- Exclude a decorative control from tab order -->
+<Image Source="decoration.png" IsTabStop="False" />
+
+<!-- Enforce a specific tab sequence -->
+<TextBox TabIndex="1" />
+<TextBox TabIndex="2" />
+<Button TabIndex="3" Content="Submit" />
+```
+
+Use `AcceptsReturn="True"` on a `TextBox` when you want the Enter key to insert a newline rather than move focus:
+
+```xml
+<TextBox AcceptsReturn="True" PlaceholderText="Enter a description..." Height="120" />
+```
+
+<Note>
+Setting `TabIndex` on one element without setting it on all others can produce unexpected focus order. Prefer the default document order when possible, and use `TabIndex` only when reordering is genuinely required.
+</Note>
+
+## Focus management
+
+### Setting initial focus
+
+Set initial focus explicitly when a `Page` or dialog loads, rather than relying on the default first-focusable-element behavior:
+
+```csharp
+protected override void OnNavigatedTo(NavigationEventArgs e)
+{
+    base.OnNavigatedTo(e);
+    MyPrimaryButton.Focus(FocusState.Programmatic);
+}
+```
+
+### Focus in dialogs
+
+When using `ContentDialog`, focus moves into the dialog automatically. Restore focus to the trigger element when the dialog closes:
+
+```csharp
+var dialog = new ContentDialog
+{
+    Title = "Confirm deletion",
+    Content = "This action cannot be undone.",
+    PrimaryButtonText = "Delete",
+    CloseButtonText = "Cancel",
+    XamlRoot = this.XamlRoot
+};
+
+var result = await dialog.ShowAsync();
+// Return focus to the element that opened the dialog
+DeleteButton.Focus(FocusState.Programmatic);
+```
+
+### Focus visuals
+
+WinUI applies Fluent focus visuals automatically. Avoid suppressing them with `FocusVisualPrimaryBrush` or `FocusVisualSecondaryBrush` set to transparent unless you provide a fully custom visible replacement.
+
+## High contrast theme support
+
+WinUI controls respond to the Windows high contrast themes (High Contrast Black, High Contrast White) automatically. Their templates reference system theme resources — `SystemColorButtonFaceColor`, `SystemColorWindowTextColor`, and so on — which resolve to the appropriate contrast values at runtime.
+
+When writing custom control templates, use system color resources instead of hard-coded colors:
+
+```xml
+<Style TargetType="local:MyControl">
+    <Setter Property="Foreground" Value="{ThemeResource SystemColorWindowTextColor}" />
+    <Setter Property="Background" Value="{ThemeResource SystemColorWindowColor}" />
+</Style>
+```
+
+<Warning>
+Hard-coded color values in custom templates will not adapt to high contrast themes, making your control unusable for users who rely on high contrast mode.
+</Warning>
+
+Test your app in high contrast mode by pressing **Left Alt + Left Shift + Print Screen** on Windows, or by going to **Settings → Accessibility → Contrast themes**.
+
+## Screen reader compatibility (Narrator)
+
+Windows Narrator reads accessible names, control types, and states from the UIA tree that WinUI's AutomationPeer implementations provide. To verify Narrator compatibility:
+
+1. Press **Win + Ctrl + Enter** to start Narrator.
+2. Navigate to your control with Tab or arrow keys.
+3. Confirm that Narrator announces the control type, name, and state (e.g., "Close dialog, button" or "Settings, navigation item, selected").
+
+When a control's state changes dynamically — for example, expanding a `TreeViewItem` — WinUI's AutomationPeer fires the appropriate UIA property-changed event so Narrator announces the new state without requiring focus movement.
+
+## Custom AutomationPeer for custom controls
+
+If you build a custom control, create a custom `AutomationPeer` by subclassing `FrameworkElementAutomationPeer` and overriding `OnCreateAutomationPeer` in your control:
+
+```csharp
+// CustomToggleControl.cs
+protected override AutomationPeer OnCreateAutomationPeer()
+{
+    return new CustomToggleControlAutomationPeer(this);
+}
+```
+
+```csharp
+// CustomToggleControlAutomationPeer.cs
+public class CustomToggleControlAutomationPeer : FrameworkElementAutomationPeer, IToggleProvider
+{
+    private readonly CustomToggleControl _owner;
+
+    public CustomToggleControlAutomationPeer(CustomToggleControl owner)
+        : base(owner)
+    {
+        _owner = owner;
+    }
+
+    protected override AutomationControlType GetAutomationControlTypeCore()
+        => AutomationControlType.CheckBox;
+
+    protected override string GetClassNameCore()
+        => nameof(CustomToggleControl);
+
+    protected override object GetPatternCore(PatternInterface patternInterface)
+    {
+        if (patternInterface == PatternInterface.Toggle)
+            return this;
+        return base.GetPatternCore(patternInterface);
+    }
+
+    // IToggleProvider
+    public ToggleState ToggleState
+        => _owner.IsChecked ? ToggleState.On : ToggleState.Off;
+
+    public void Toggle()
+    {
+        _owner.IsChecked = !_owner.IsChecked;
+        RaisePropertyChangedEvent(
+            TogglePatternIdentifiers.ToggleStateProperty,
+            _owner.IsChecked ? ToggleState.Off : ToggleState.On,
+            _owner.IsChecked ? ToggleState.On : ToggleState.Off);
+    }
+}
+```
+
+<Tip>
+Call `RaisePropertyChangedEvent` whenever your control's state changes so that assistive technologies receive the update without polling.
+</Tip>
+
+## Checklist
+
+<AccordionGroup>
+  <Accordion title="Accessible names and labels">
+    - Set `AutomationProperties.Name` on every icon-only button, image, and control without visible text.
+    - Use `AutomationProperties.LabeledBy` when a `TextBlock` is the visible label for an input.
+    - Avoid using `AutomationProperties.Name` on controls that already have meaningful text content — it will override the content-derived name.
+  </Accordion>
+  <Accordion title="Keyboard navigation">
+    - Verify all interactive controls are reachable by Tab.
+    - Test arrow-key navigation within composite controls.
+    - Set `AcceptsReturn` only on multi-line `TextBox` controls.
+    - Use `TabIndex` only where document order is genuinely incorrect.
+  </Accordion>
+  <Accordion title="High contrast">
+    - Use `ThemeResource` system color keys in custom templates.
+    - Test in both High Contrast Black and High Contrast White themes.
+    - Ensure focus visuals remain visible in high contrast mode.
+  </Accordion>
+  <Accordion title="Custom controls">
+    - Override `OnCreateAutomationPeer` in every custom control.
+    - Implement the correct UIA patterns for the control's behavior.
+    - Fire `RaisePropertyChangedEvent` on all state changes.
+  </Accordion>
+</AccordionGroup>

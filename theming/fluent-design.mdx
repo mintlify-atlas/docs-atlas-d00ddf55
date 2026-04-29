@@ -1,0 +1,199 @@
+---
+title: "Fluent Design System in WinUI 3"
+description: "How WinUI 3 implements Fluent Design through Acrylic, Mica, motion, light and dark themes, and system backdrop support for Windows apps."
+---
+
+WinUI 3 is built on the Fluent Design System — Microsoft's design language for Windows. Every control in WinUI ships with Fluent styles out of the box, giving your app a cohesive, modern look that respects the user's system theme and accent color preferences.
+
+## What is Fluent Design?
+
+Fluent Design defines five building blocks that work together to create responsive, intuitive Windows experiences:
+
+<CardGroup cols={2}>
+  <Card title="Light" icon="sun">
+    Strategic use of light and shadow to guide attention, convey hierarchy, and reveal interactive surfaces.
+  </Card>
+  <Card title="Depth" icon="layers">
+    Z-axis layering that communicates spatial relationships between UI elements through elevation and shadow.
+  </Card>
+  <Card title="Motion" icon="play">
+    Purposeful animations that orient users, confirm interactions, and make transitions feel natural.
+  </Card>
+  <Card title="Material" icon="droplet">
+    Translucent surfaces — Acrylic and Mica — that let the environment show through the app's UI.
+  </Card>
+</CardGroup>
+
+## Light and dark theme support
+
+WinUI automatically responds to the user's Windows theme preference. Every control ships with theme dictionaries for `Light`, `Default` (dark), and `HighContrast` themes, defined in per-control `_themeresources.xaml` files.
+
+Your app inherits the active theme at startup. To force a specific theme, set `RequestedTheme` on a `FrameworkElement`:
+
+```xml MainWindow.xaml
+<Window
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid RequestedTheme="Dark">
+        <!-- content always renders in dark theme -->
+    </Grid>
+</Window>
+```
+
+`RequestedTheme` can be set on any `FrameworkElement`, not just the root. This lets you apply different themes to different subtrees in the same window.
+
+<Note>
+  Setting `RequestedTheme` on the `Application` object is not supported in WinUI 3. Set it on the root `Window` or a containing element instead.
+</Note>
+
+## How theme resources are organized
+
+WinUI stores its visual tokens in XAML resource dictionaries loaded at runtime by `XamlControlsResources`. The key files are:
+
+- **`Common_themeresources_any.xaml`** — semantic color tokens (`TextFillColorPrimary`, `ControlFillColorDefault`, `SolidBackgroundFillColorBase`, etc.) organized into `Default` (dark), `Light`, and `HighContrast` theme dictionaries
+- **`Common_themeresources.xaml`** — shared thickness, brush aliases, and focus visual resources across themes
+- **Per-control `_themeresources.xaml` files** — control-specific brushes and styles (for example, `Button_themeresources.xaml` defines `ButtonBackground`, `ButtonForeground`, `ButtonBorderBrush`, and their pointer-over, pressed, and disabled variants)
+
+Each theme dictionary uses `x:Key="Default"` for dark, `x:Key="Light"` for light, and `x:Key="HighContrast"` for the accessibility high-contrast theme.
+
+## Acrylic
+
+`AcrylicBrush` creates a translucent surface that blurs and blends the content behind it. WinUI provides predefined acrylic brushes in `AcrylicBrush_themeresources.xaml`:
+
+```xml
+<!-- Background acrylic (blurs desktop content behind the window) -->
+<AcrylicBrush x:Key="AcrylicBackgroundFillColorBaseBrush"
+              TintColor="#202020"
+              TintOpacity="0.5"
+              FallbackColor="#1C1C1C" />
+
+<!-- In-app acrylic (blurs app content behind an element) -->
+<AcrylicBrush x:Key="AcrylicInAppFillColorBaseBrush"
+              TintColor="#202020"
+              TintOpacity="0.5"
+              FallbackColor="#1C1C1C" />
+```
+
+Use predefined brushes via `{ThemeResource}` to get correct light/dark/high-contrast behavior automatically.
+
+## Mica
+
+Mica samples the user's desktop wallpaper and applies a subtle tint, creating a window backdrop that feels grounded in the user's environment. It is more performance-efficient than Acrylic and is the recommended backdrop for main app windows.
+
+## System backdrops
+
+WinUI 3 exposes system backdrops through two mechanisms: setting `SystemBackdrop` directly on a `Window`, or using `SystemBackdropElement` to apply a backdrop to an arbitrary region within your UI.
+
+### Applying Mica to a window
+
+<Steps>
+  <Step title="Set SystemBackdrop in XAML">
+    Assign a `MicaBackdrop` to your window's `SystemBackdrop` property and make the window background transparent so the Mica layer shows through:
+
+    ```xml MainWindow.xaml
+    <Window
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:media="using:Microsoft.UI.Xaml.Media">
+        <Window.SystemBackdrop>
+            <media:MicaBackdrop />
+        </Window.SystemBackdrop>
+        <!-- window content -->
+    </Window>
+    ```
+  </Step>
+
+  <Step title="Or set it in code-behind">
+    You can also set the backdrop in C# after the window is created:
+
+    ```csharp MainWindow.xaml.cs
+    using Microsoft.UI.Xaml;
+    using Microsoft.UI.Xaml.Media;
+
+    public sealed partial class MainWindow : Window
+    {
+        public MainWindow()
+        {
+            this.InitializeComponent();
+            this.SystemBackdrop = new MicaBackdrop();
+        }
+    }
+    ```
+  </Step>
+</Steps>
+
+### Applying Acrylic to a window
+
+Replace `MicaBackdrop` with `DesktopAcrylicBackdrop` to use the Acrylic material:
+
+<CodeGroup>
+
+```xml XAML
+<Window.SystemBackdrop>
+    <media:DesktopAcrylicBackdrop />
+</Window.SystemBackdrop>
+```
+
+```csharp C#
+this.SystemBackdrop = new DesktopAcrylicBackdrop();
+```
+
+</CodeGroup>
+
+### Using SystemBackdropElement
+
+`SystemBackdropElement` is a `FrameworkElement` that hosts a backdrop within a region of your UI — not just the full window. It supports both `MicaBackdrop` and `DesktopAcrylicBackdrop`, and exposes a `CornerRadius` property for rounded corners.
+
+<Warning>
+  `SystemBackdropElement` is currently in preview. The API surface may change before final release.
+</Warning>
+
+```xml
+<controls:SystemBackdropElement
+    CornerRadius="8"
+    HorizontalAlignment="Stretch"
+    VerticalAlignment="Stretch"
+    xmlns:controls="using:Microsoft.UI.Xaml.Controls">
+    <controls:SystemBackdropElement.SystemBackdrop>
+        <media:MicaBackdrop xmlns:media="using:Microsoft.UI.Xaml.Media" />
+    </controls:SystemBackdropElement.SystemBackdrop>
+</controls:SystemBackdropElement>
+```
+
+To switch backdrops at runtime, assign a new backdrop instance to the `SystemBackdrop` property:
+
+```csharp
+// Switch from Mica to Desktop Acrylic at runtime
+myBackdropElement.SystemBackdrop = new DesktopAcrylicBackdrop();
+```
+
+## Connected animations
+
+WinUI supports connected animations via `ConnectedAnimationService`, which visually links a UI element between two views during navigation. This makes transitions feel continuous rather than abrupt.
+
+```csharp
+// In the source page — prepare the animation before navigating
+ConnectedAnimationService.GetForCurrentView()
+    .PrepareToAnimate("itemAnimation", sourceElement);
+
+Frame.Navigate(typeof(DetailPage), item);
+```
+
+```csharp
+// In the destination page — start the animation
+var animation = ConnectedAnimationService.GetForCurrentView()
+    .GetAnimation("itemAnimation");
+
+animation?.TryStart(destinationElement);
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Resources and styles" icon="paintbrush" href="/theming/resources-styles">
+    Learn how to include WinUI styles and override them with custom resource keys.
+  </Card>
+  <Card title="Compact resources" icon="compress" href="/theming/compact-resources">
+    Enable compact density mode for data-heavy, productivity-focused layouts.
+  </Card>
+</CardGroup>
